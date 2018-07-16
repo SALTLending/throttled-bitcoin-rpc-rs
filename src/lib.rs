@@ -69,9 +69,10 @@ pub struct Transaction {
 }
 
 #[derive(Deserialize)]
+#[serde(untagged)]
 pub enum Vin {
-    Tx(VinTx),
     Coinbase(VinCoinbase),
+    Tx(VinTx),
 }
 
 #[derive(Deserialize)]
@@ -94,12 +95,7 @@ pub struct Vout {
 }
 
 #[derive(Deserialize)]
-pub enum GetBlockReplyOld {
-    True(Block),
-    False(SerializedBlock),
-}
-
-#[derive(Deserialize)]
+#[serde(untagged)]
 pub enum GetBlockReply {
     Zero(SerializedBlock),
     One(Block),
@@ -179,6 +175,7 @@ pub struct TXIDS {
 }
 
 #[derive(Deserialize)]
+#[serde(untagged)]
 pub enum RawMemPool {
     True(TxDescription),
     False(TXIDS),
