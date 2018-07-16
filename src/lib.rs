@@ -220,6 +220,8 @@ jsonrpc_client!(pub struct BitcoinRpcClient {
     pub fn gettxout(&mut self, txid: String, vout: i64, unconfirmed: bool) -> RpcRequest<TxOut>;
 });
 
+pub type BitcoinRpc = BitcoinRpcClient<jsonrpc_client_http::HttpHandle>;
+
 /// Creates a connection to a bitcoin rpc server
 pub fn new_client(protocol: &str, url: &str, user: Option<String>, pass: Option<String>) -> BitcoinRpcClient<jsonrpc_client_http::HttpHandle> {
     // Check that if we have a password, we have a username; other way around is ok
