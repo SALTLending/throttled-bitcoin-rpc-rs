@@ -50,6 +50,7 @@ pub struct FullBlock {
     pub mediantime: i64,
     pub nonce: i64,
     pub bits: String,
+    pub difficulty: f64,
     pub chainwork: String,
     pub previousblockhash: Option<String>,
     pub nextblockhash: Option<String>,
@@ -89,7 +90,7 @@ pub struct VinCoinbase {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Vout {
-    pub value: String,
+    pub value: f64,
     pub n: i64,
     pub script_pub_key: ScriptPubKey,
 }
