@@ -55,12 +55,14 @@ pub struct Block {
     pub confirmations: i64,
     pub strippedsize: i64,
     pub size: i64,
+    pub weight: i64,
     pub height: i64,
     pub version: i64,
+    pub version_hex: String,
     pub merkleroot: String,
     pub tx: Vec<Json>,
-    pub txid: String,
     pub time: i64,
+    pub mediantime: i64,
     pub nonce: i64,
     pub bits: String,
     pub chainwork: String,
@@ -74,7 +76,7 @@ pub enum GetBlockReply {
 }
 
 serde_struct_enum_impl!(GetBlockReply,
-                        True, Block, hash, confirmations, strippedsize, size, height, version, merkleroot, tx, txid <- "TXID", time, nonce, bits,  chainwork, previousblockhash, nextblockhash;
+                        True, Block, hash, confirmations, strippedsize, size, weight, height, version, version_hex <- "versionHex", merkleroot, tx, time, mediantime, nonce, bits, chainwork, previousblockhash, nextblockhash;
                         False, SerializedBlock, result
 );
 
