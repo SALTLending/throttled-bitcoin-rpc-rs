@@ -1,5 +1,5 @@
 [package]
-name = "bitcoin-rpc"
+name = "bitcoinrpc"
 version = "0.2.0"
 authors = ["Jean Pierre Dudey <jeandudey@hotmail.com>"]
 repository = "https://github.com/jeandudey/rust-bitcoin-rpc"
