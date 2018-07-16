@@ -225,12 +225,12 @@ jsonrpc_client!(pub struct BitcoinRpcClient {
 pub type BitcoinRpc = BitcoinRpcClient<jsonrpc_client_http::HttpHandle>;
 
 /// Creates a connection to a bitcoin rpc server
-pub fn new_client(protocol: &str, url: &str, user: Option<String>, pass: Option<String>) -> BitcoinRpcClient<jsonrpc_client_http::HttpHandle> {
+pub fn new_client(url: &str, user: Option<String>, pass: Option<String>) -> BitcoinRpcClient<jsonrpc_client_http::HttpHandle> {
     // Check that if we have a password, we have a username; other way around is ok
     debug_assert!(pass.is_none() || user.is_some());
 
     let transport = HttpTransport::new().standalone().unwrap();
-    let mut transport_handle = transport.handle(&format!("{}://{}", protocol, url)).unwrap();
+    let mut transport_handle = transport.handle(url).unwrap();
     if let Some(ref user) = user {
         transport_handle.set_header(Authorization(Basic {
             username: user.clone(),
