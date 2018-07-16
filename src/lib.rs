@@ -3,8 +3,10 @@ extern crate serde;
 extern crate serde_json;
 #[macro_use] extern crate jsonrpc_client_core;
 extern crate jsonrpc_client_http;
+extern crate hyper;
 
 use jsonrpc_client_http::HttpTransport;
+use hyper::header::{Authorization, Basic};
 
 #[derive(Deserialize)]
 pub struct SerializedBlock {
@@ -228,12 +230,12 @@ pub fn new_client(protocol: &str, url: &str, user: Option<String>, pass: Option<
     debug_assert!(pass.is_none() || user.is_some());
 
     let transport = HttpTransport::new().standalone().unwrap();
-    let transport_handle = match user {
-        Some(u) => match pass {
-            Some(p) => transport.handle(&format!("{}://{}:{}@{}", protocol, u, p, url)),
-            None => transport.handle(&format!("{}://{}@{}", protocol, u, url))
-        },
-        None => transport.handle(&format!("{}://{}", protocol, url))
-    }.unwrap();
+    let mut transport_handle = transport.handle(&format!("{}://{}", protocol, url)).unwrap();
+    if let Some(ref user) = user {
+        transport_handle.set_header(Authorization(Basic {
+            username: user.clone(),
+            password: pass.clone()
+        }));
+    }
     return BitcoinRpcClient::new(transport_handle);
 }
