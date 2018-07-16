@@ -7,10 +7,10 @@ use jsonrpc_v1::client::Client as RpcClient;
 use jsonrpc_v1::Error as RpcError;
 use strason::Json;
 
-macro_rules! rpc_method {
-    ($method_name:ident<$return_type:ty>) => {
+macro_rules! rpc_method_alias {
+    ($x:expr, $method_name:ident<$return_type:ty>) => {
         pub fn $method_name(&self) -> Result<$return_type, RpcError> {
-            let request = self.client.build_request(String::from(stringify!($method_name)), vec![]);
+            let request = self.client.build_request(String::from(stringify!($x)), vec![]);
 
             match self.client.send_request(&request).and_then(|res| res.into_result::<$return_type>()) {
                 Ok(res) => return Ok(res),
@@ -18,7 +18,7 @@ macro_rules! rpc_method {
             }
         }
     };
-    ($method_name:ident<$return_type:ty>, { $($param:ident : $param_ty:ty),* }) => {
+    ($x:expr, $method_name:ident<$return_type:ty>, { $($param:ident : $param_ty:ty),* }) => {
         pub fn $method_name(&self, $($param : $param_ty),*) -> Result<$return_type, RpcError> {
             let mut params: Vec<Json> = Vec::new();
 
@@ -26,7 +26,7 @@ macro_rules! rpc_method {
                 params.push(Json::from($param));
             )*
 
-            let request = self.client.build_request(String::from(stringify!($method_name)), params);
+            let request = self.client.build_request(String::from(stringify!($x)), params);
 
             match self.client.send_request(&request).and_then(|res| res.into_result::<$return_type>()) {
                 Ok(res) => return Ok(res),
@@ -34,6 +34,11 @@ macro_rules! rpc_method {
             }
         }
     }
+}
+
+macro_rules! rpc_method {
+    ($method_name:ident<$return_type:ty>) => { rpc_method_alias!($method_name, $method_name<$return_type>); };
+    ($method_name:ident<$return_type:ty>, $x:expr) => { rpc_method_alias!($method_name, $method_name<$return_type>, $x); };
 }
 
 /// A Handle to a Bitcoin Rpc connection
@@ -48,6 +53,7 @@ pub struct SerializedBlock {
 pub struct Block {
     pub hash: String,
     pub confirmations: i64,
+    pub strippedsize: i64,
     pub size: i64,
     pub height: i64,
     pub version: i64,
@@ -68,7 +74,7 @@ pub enum GetBlockReply {
 }
 
 serde_struct_enum_impl!(GetBlockReply,
-                        True, Block, hash, confirmations, size, height, version, merkleroot, tx, txid <- "TXID", time, nonce, bits,  chainwork, previousblockhash, nextblockhash;
+                        True, Block, hash, confirmations, strippedsize, size, height, version, merkleroot, tx, txid <- "TXID", time, nonce, bits,  chainwork, previousblockhash, nextblockhash;
                         False, SerializedBlock, result
 );
 
@@ -233,15 +239,20 @@ impl BitcoinRpc {
 
     rpc_method!(getbestblockhash<String>);
 
-    rpc_method!(getblock<GetBlockReply>, {
+    rpc_method_alias!(getblock, getblock_old<GetBlockReply>, {
         header_hash: String,
         format: bool
+    });
+
+    rpc_method_alias!(getblock, getblock<GetBlockReply>, {
+        header_hash: String,
+        verbosity: i32
     });
 
     rpc_method!(getblockchaininfo<BlockChainInfo>);
     rpc_method!(getblockcount<i64>);
 
-    rpc_method!(getblockhash<String>, {
+    rpc_method_alias!(getblockhash, getblockhash<String>, {
         block_height: i64
     });
 
@@ -249,11 +260,11 @@ impl BitcoinRpc {
     rpc_method!(getdifficulty<f64>);
     rpc_method!(getmempoolinfo<MemPoolInfo>);
 
-    rpc_method!(getrawmempool<RawMemPool>, {
+    rpc_method_alias!(getrawmempool, getrawmempool<RawMemPool>, {
         format: bool
     });
 
-    rpc_method!(gettxout<TxOut>, {
+    rpc_method_alias!(gettxout, gettxout<TxOut>, {
         txid: String,
         vout: i64,
         unconfirmed: bool
