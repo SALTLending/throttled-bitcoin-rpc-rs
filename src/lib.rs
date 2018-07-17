@@ -187,9 +187,9 @@ pub enum RawMemPool {
 pub struct ScriptPubKey {
     pub asm: String,
     pub hex: String,
-    #[serde(rename = "reqSigs")]  pub req_sigs: i64,
+    #[serde(rename = "reqSigs")]  pub req_sigs: Option<i64>,
     #[serde(rename = "type")] pub script_type: String,
-    pub addresses: Vec<String>,
+    pub addresses: Option<Vec<String>>,
 }
 
 #[derive(Deserialize)]
