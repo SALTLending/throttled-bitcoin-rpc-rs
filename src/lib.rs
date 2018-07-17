@@ -78,8 +78,13 @@ pub enum Vin {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct VinTx {
-
+    pub txid: String,
+    pub vout: i64,
+    pub script_sig: ScriptSig,
+    pub txinwitness: Option<Vec<String>>,
+    pub sequence: i64
 }
 
 #[derive(Deserialize)]
@@ -193,11 +198,18 @@ pub struct ScriptPubKey {
 }
 
 #[derive(Deserialize)]
+pub struct ScriptSig {
+    pub asm: String,
+    pub hex: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TxOut {
     pub bestblock: String,
     pub confirmations: i64,
     pub value: f64,
-    pub scriptpubkey: ScriptPubKey,
+    pub script_pub_key: ScriptPubKey,
     pub coinbase: bool,
 }
 
