@@ -35,6 +35,7 @@ pub struct Block {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FullBlock {
     pub hash: String,
     pub confirmations: i64,
