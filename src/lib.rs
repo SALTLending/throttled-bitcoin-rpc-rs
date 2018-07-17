@@ -213,7 +213,7 @@ pub struct TxOutSetInfo {
 }
 
 jsonrpc_client!(pub struct BitcoinRpcClient {
-    pub fn getblock(&mut self, header_hash: String, verbosity: i32) -> RpcRequest<FullBlock>;
+    pub fn getblock(&mut self, header_hash: String, verbosity: i32) -> RpcRequest<GetBlockReply>;
     pub fn getblockchaininfo(&mut self) -> RpcRequest<BlockChainInfo>;
     pub fn getblockcount(&mut self) -> RpcRequest<i64>;
     pub fn getblockhash(&mut self, block_height: i64) -> RpcRequest<String>;
