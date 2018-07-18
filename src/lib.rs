@@ -225,6 +225,7 @@ pub struct TxOutSetInfo {
 }
 
 #[derive(Deserialize)]
+#[serde(untagged)]
 pub enum GetRawTransactionReply {
     True(Transaction),
     False(SerializedData),
