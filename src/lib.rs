@@ -9,7 +9,7 @@ use jsonrpc_client_http::HttpTransport;
 use hyper::header::{Authorization, Basic};
 
 #[derive(Deserialize)]
-pub struct SerializedBlock {
+pub struct SerializedData {
     pub result: String,
 }
 
@@ -104,7 +104,7 @@ pub struct Vout {
 #[derive(Deserialize)]
 #[serde(untagged)]
 pub enum GetBlockReply {
-    Zero(SerializedBlock),
+    Zero(SerializedData),
     One(Block),
     Two(FullBlock)
 }
@@ -224,13 +224,20 @@ pub struct TxOutSetInfo {
     pub total_amount: serde_json::Number,
 }
 
+#[derive(Deserialize)]
+pub enum GetRawTransactionReply {
+    True(Transaction),
+    False(SerializedData),
+}
+
 jsonrpc_client!(pub struct BitcoinRpcClient {
     pub fn getblock(&mut self, header_hash: String, verbosity: i32) -> RpcRequest<GetBlockReply>;
     pub fn getblockchaininfo(&mut self) -> RpcRequest<BlockChainInfo>;
     pub fn getblockcount(&mut self) -> RpcRequest<i64>;
     pub fn getblockhash(&mut self, block_height: i64) -> RpcRequest<String>;
-    pub fn getrawmempool(&mut self, format: bool) -> RpcRequest<RawMemPool>;
+    pub fn getrawtransaction(&mut self, txid: String, verbose: bool) -> RpcRequest<GetRawTransactionReply>;
     pub fn gettxout(&mut self, txid: String, vout: i64, unconfirmed: bool) -> RpcRequest<TxOut>;
+    pub fn getrawmempool(&mut self, format: bool) -> RpcRequest<RawMemPool>;
 });
 
 pub type BitcoinRpc = BitcoinRpcClient<jsonrpc_client_http::HttpHandle>;
