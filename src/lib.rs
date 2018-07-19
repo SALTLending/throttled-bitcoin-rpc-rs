@@ -165,30 +165,6 @@ pub struct MemPoolInfo {
 }
 
 #[derive(Deserialize)]
-pub struct TxDescription {
-    pub txid: String,
-    pub size: i64,
-    pub fee: serde_json::Number,
-    pub time: i64,
-    pub height: i64,
-    pub startingpriority: i64,
-    pub currentpriority: i64,
-    pub depends: Vec<String>,
-}
-
-#[derive(Deserialize)]
-pub struct TXIDS {
-    pub result: Vec<String>,
-}
-
-#[derive(Deserialize)]
-#[serde(untagged)]
-pub enum RawMemPool {
-    True(TxDescription),
-    False(TXIDS),
-}
-
-#[derive(Deserialize)]
 pub struct ScriptPubKey {
     pub asm: String,
     pub hex: String,
@@ -229,6 +205,30 @@ pub struct TxOutSetInfo {
 pub enum GetRawTransactionReply {
     True(Transaction),
     False(SerializedData),
+}
+
+#[derive(Deserialize)]
+pub struct MemPoolTx {
+    pub size: i64,
+    pub fee: serde_json::Number,
+    pub modifiedfee: serde_json::Number,
+    pub time: i64,
+    pub height: i64,
+    pub descendantcount: i64,
+    pub descendantsize: i64,
+    pub descendantfees: i64,
+    pub ancestorcount: i64,
+    pub ancestorsize: i64,
+    pub ancestorfees: i64,
+    pub wtxid: String,
+    pub depends: Vec<String>
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+pub enum RawMemPool {
+    True(std::collections::HashMap<String, MemPoolTx>),
+    False(Vec<String>),
 }
 
 jsonrpc_client!(pub struct BitcoinRpcClient {
