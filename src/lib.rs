@@ -51,7 +51,7 @@ pub struct FullBlock {
     pub mediantime: i64,
     pub nonce: i64,
     pub bits: String,
-    pub difficulty: String,
+    pub difficulty: serde_json::Number,
     pub chainwork: String,
     pub previousblockhash: Option<String>,
     pub nextblockhash: Option<String>,
@@ -96,7 +96,7 @@ pub struct VinCoinbase {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Vout {
-    pub value: String,
+    pub value: serde_json::Number,
     pub n: i64,
     pub script_pub_key: ScriptPubKey,
 }
@@ -139,9 +139,9 @@ pub struct BlockChainInfo {
     pub blocks: i64,
     pub headers: i64,
     pub bestblockhash: String,
-    pub difficulty: String,
+    pub difficulty: serde_json::Number,
     pub mediantime: i64,
-    pub verificationprogress: String,
+    pub verificationprogress: serde_json::Number,
     pub chainwork: String,
     pub pruned: bool,
     pub softforks: Vec<Softfork>,
@@ -161,7 +161,7 @@ pub struct MemPoolInfo {
     pub bytes: i64,
     pub usage: i64,
     pub maxmempool: i64,
-    pub mempoolminfee: String,
+    pub mempoolminfee: serde_json::Number,
 }
 
 #[derive(Deserialize)]
@@ -184,7 +184,7 @@ pub struct ScriptSig {
 pub struct TxOut {
     pub bestblock: String,
     pub confirmations: i64,
-    pub value: String,
+    pub value: serde_json::Number,
     pub script_pub_key: ScriptPubKey,
     pub coinbase: bool,
 }
@@ -197,7 +197,7 @@ pub struct TxOutSetInfo {
     pub txouts: i64,
     pub bytes_serialized: i64,
     pub hash_serialized: String,
-    pub total_amount: String,
+    pub total_amount: serde_json::Number,
 }
 
 #[derive(Deserialize)]
@@ -210,8 +210,8 @@ pub enum GetRawTransactionReply {
 #[derive(Deserialize)]
 pub struct MemPoolTx {
     pub size: i64,
-    pub fee: String,
-    pub modifiedfee: String,
+    pub fee: serde_json::Number,
+    pub modifiedfee: serde_json::Number,
     pub time: i64,
     pub height: i64,
     pub descendantcount: i64,
