@@ -190,6 +190,13 @@ pub struct TxOut {
 }
 
 #[derive(Deserialize)]
+#[serde(untagged)]
+pub enum GetTxOutReply {
+    Null(()),
+    TxOut(TxOut),
+}
+
+#[derive(Deserialize)]
 pub struct TxOutSetInfo {
     pub height: i64,
     pub bestblock: String,
@@ -237,7 +244,7 @@ jsonrpc_client!(pub struct BitcoinRpcClient {
     pub fn getblockcount(&mut self) -> RpcRequest<i64>;
     pub fn getblockhash(&mut self, block_height: i64) -> RpcRequest<String>;
     pub fn getrawtransaction(&mut self, txid: String, verbose: bool) -> RpcRequest<GetRawTransactionReply>;
-    pub fn gettxout(&mut self, txid: String, vout: i64, unconfirmed: bool) -> RpcRequest<TxOut>;
+    pub fn gettxout(&mut self, txid: String, vout: i64, unconfirmed: bool) -> RpcRequest<GetTxOutReply>;
     pub fn getrawmempool(&mut self, format: bool) -> RpcRequest<RawMemPool>;
 });
 
