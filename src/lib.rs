@@ -71,6 +71,23 @@ pub struct Transaction {
 }
 
 #[derive(Deserialize)]
+pub struct RawTransaction {
+    pub txid: String,
+    pub hash: String,
+    pub version: i64,
+    pub size: i64,
+    pub vsize: i64,
+    pub locktime: i64,
+    pub vin: Vec<Vin>,
+    pub vout: Vec<Vout>,
+    pub hex: String,
+    pub blockhash: String,
+    pub confirmations: i64,
+    pub time: i64,
+    pub blocktime: i64,
+}
+
+#[derive(Deserialize)]
 #[serde(untagged)]
 pub enum Vin {
     Coinbase(VinCoinbase),
@@ -210,7 +227,7 @@ pub struct TxOutSetInfo {
 #[derive(Deserialize)]
 #[serde(untagged)]
 pub enum GetRawTransactionReply {
-    True(Transaction),
+    True(RawTransaction),
     False(SerializedData),
 }
 
