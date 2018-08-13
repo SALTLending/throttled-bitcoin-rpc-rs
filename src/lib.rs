@@ -29,6 +29,7 @@ pub struct Block {
     pub mediantime: i64,
     pub nonce: i64,
     pub bits: String,
+    pub difficulty: serde_json::Number,
     pub chainwork: String,
     pub previousblockhash: Option<String>,
     pub nextblockhash: Option<String>,
