@@ -68,23 +68,10 @@ pub struct Transaction {
     pub vin: Vec<Vin>,
     pub vout: Vec<Vout>,
     pub hex: String,
-}
-
-#[derive(Deserialize)]
-pub struct RawTransaction {
-    pub txid: String,
-    pub hash: String,
-    pub version: i64,
-    pub size: i64,
-    pub vsize: i64,
-    pub locktime: i64,
-    pub vin: Vec<Vin>,
-    pub vout: Vec<Vout>,
-    pub hex: String,
-    pub blockhash: String,
-    pub confirmations: i64,
-    pub time: i64,
-    pub blocktime: i64,
+    pub blockhash: Option<String>,
+    pub confirmations: Option<i64>,
+    pub time: Option<i64>,
+    pub blocktime: Option<i64>,
 }
 
 #[derive(Deserialize)]
@@ -227,7 +214,7 @@ pub struct TxOutSetInfo {
 #[derive(Deserialize)]
 #[serde(untagged)]
 pub enum GetRawTransactionReply {
-    True(RawTransaction),
+    True(Transaction),
     False(SerializedData),
 }
 
