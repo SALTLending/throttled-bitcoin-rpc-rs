@@ -18,16 +18,12 @@ pub struct SerializedData {
 pub struct Block {
     pub hash: String,
     pub confirmations: i64,
-    pub strippedsize: i64,
     pub size: i64,
-    pub weight: i64,
     pub height: i64,
     pub version: i64,
-    pub version_hex: String,
     pub merkleroot: String,
     pub tx: Vec<String>,
     pub time: i64,
-    pub mediantime: i64,
     pub nonce: i64,
     pub bits: String,
     pub difficulty: serde_json::Number,
@@ -107,12 +103,21 @@ pub struct Vout {
     pub script_pub_key: ScriptPubKey,
 }
 
+#[cfg(not(feature = "ltc"))]
 #[derive(Deserialize)]
 #[serde(untagged)]
 pub enum GetBlockReply {
     Zero(SerializedData),
     One(Block),
     Two(FullBlock)
+}
+
+#[cfg(feature = "ltc")]
+#[derive(Deserialize)]
+#[serde(untagged)]
+pub enum GetBlockReply {
+    False(SerializedData),
+    True(Block),
 }
 
 #[derive(Deserialize)]
@@ -245,7 +250,10 @@ pub enum RawMemPool {
 }
 
 jsonrpc_client!(pub struct BitcoinRpcClient {
+    #[cfg(feature = "ltc")]
     pub fn getblock(&mut self, header_hash: String, verbosity: i32) -> RpcRequest<GetBlockReply>;
+    #[cfg(not(feature = "ltc"))]
+    pub fn getblock(&mut self, header_hash: String, verbosity: bool) -> RpcRequest<GetBlockReply>;
     pub fn getblockchaininfo(&mut self) -> RpcRequest<BlockChainInfo>;
     pub fn getblockcount(&mut self) -> RpcRequest<i64>;
     pub fn getblockhash(&mut self, block_height: i64) -> RpcRequest<String>;
