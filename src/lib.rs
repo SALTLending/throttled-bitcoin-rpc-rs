@@ -218,11 +218,20 @@ pub struct TxOutSetInfo {
     pub total_amount: serde_json::Number,
 }
 
+#[cfg(not(feature = "ltc"))]
 #[derive(Deserialize)]
 #[serde(untagged)]
 pub enum GetRawTransactionReply {
-    True(Transaction),
     False(SerializedData),
+    True(Transaction),
+}
+
+#[cfg(feature = "ltc")]
+#[derive(Deserialize)]
+#[serde(untagged)]
+pub enum GetRawTransactionReply {
+    Zero(SerializedData),
+    One(Transaction),
 }
 
 #[derive(Deserialize)]
@@ -250,14 +259,17 @@ pub enum RawMemPool {
 }
 
 jsonrpc_client!(pub struct BitcoinRpcClient {
-    #[cfg(feature = "ltc")]
-    pub fn getblock(&mut self, header_hash: String, verbosity: i32) -> RpcRequest<GetBlockReply>;
     #[cfg(not(feature = "ltc"))]
+    pub fn getblock(&mut self, header_hash: String, verbosity: i32) -> RpcRequest<GetBlockReply>;
+    #[cfg(feature = "ltc")]
     pub fn getblock(&mut self, header_hash: String, verbosity: bool) -> RpcRequest<GetBlockReply>;
     pub fn getblockchaininfo(&mut self) -> RpcRequest<BlockChainInfo>;
     pub fn getblockcount(&mut self) -> RpcRequest<i64>;
     pub fn getblockhash(&mut self, block_height: i64) -> RpcRequest<String>;
+    #[cfg(not(feature = "ltc"))]
     pub fn getrawtransaction(&mut self, txid: String, verbose: bool) -> RpcRequest<GetRawTransactionReply>;
+    #[cfg(feature = "ltc")]
+    pub fn getrawtransaction(&mut self, txid: String, verbose: i32) -> RpcRequest<GetRawTransactionReply>;
     pub fn gettxout(&mut self, txid: String, vout: i64, unconfirmed: bool) -> RpcRequest<GetTxOutReply>;
     pub fn getrawmempool(&mut self, format: bool) -> RpcRequest<RawMemPool>;
 });
