@@ -7,6 +7,7 @@ extern crate hyper;
 
 use jsonrpc_client_http::HttpTransport;
 use hyper::header::{Authorization, Basic};
+use std::collections::HashMap;
 
 #[derive(Deserialize)]
 pub struct SerializedData {
@@ -179,8 +180,10 @@ pub struct MemPoolInfo {
 pub struct ScriptPubKey {
     pub asm: String,
     pub hex: String,
-    #[serde(rename = "reqSigs")]  pub req_sigs: Option<i64>,
-    #[serde(rename = "type")] pub script_type: String,
+    #[serde(rename = "reqSigs")]
+    pub req_sigs: Option<i64>,
+    #[serde(rename = "type")]
+    pub script_type: String,
     pub addresses: Option<Vec<String>>,
 }
 
@@ -254,24 +257,50 @@ pub struct MemPoolTx {
 #[derive(Deserialize)]
 #[serde(untagged)]
 pub enum RawMemPool {
-    True(std::collections::HashMap<String, MemPoolTx>),
+    True(HashMap<String, MemPoolTx>),
     False(Vec<String>),
 }
 
+#[derive(Serialize)]
+pub struct TxInput {
+    pub txid: String,
+    pub vout: i32,
+    #[serde(rename="Sequence")]
+    pub sequence: Option<i32>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all="camelCase")]
+pub struct TxOutput {
+    pub txid: String,
+    pub vout: i32,
+    pub script_pub_key: String,
+    pub redeem_script: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct SignedTx {
+    pub hex: String,
+    pub complete: bool,
+}
+
 jsonrpc_client!(pub struct BitcoinRpcClient {
-    #[cfg(not(feature = "ltc"))]
-    pub fn getblock(&mut self, header_hash: String, verbosity: i32) -> RpcRequest<GetBlockReply>;
-    #[cfg(feature = "ltc")]
-    pub fn getblock(&mut self, header_hash: String, verbosity: bool) -> RpcRequest<GetBlockReply>;
+    pub fn createrawtransaction(&mut self, inputs: Vec<TxInput>, outputs: HashMap<String, f64>, locktime: Option<i32>) -> RpcRequest<String>;
+    pub fn dumpprivkey(&mut self, address: String) -> RpcRequest<String>;
+    pub fn generate(&mut self, number: i32, iterations: Option<i32>) -> RpcRequest<Vec<String>>;
+    #[cfg(not(feature = "ltc"))] pub fn getblock(&mut self, header_hash: String, verbosity: i32) -> RpcRequest<GetBlockReply>;
+    #[cfg(feature = "ltc")] pub fn getblock(&mut self, header_hash: String, verbosity: bool) -> RpcRequest<GetBlockReply>;
     pub fn getblockchaininfo(&mut self) -> RpcRequest<BlockChainInfo>;
     pub fn getblockcount(&mut self) -> RpcRequest<i64>;
     pub fn getblockhash(&mut self, block_height: i64) -> RpcRequest<String>;
-    #[cfg(not(feature = "ltc"))]
-    pub fn getrawtransaction(&mut self, txid: String, verbose: bool) -> RpcRequest<GetRawTransactionReply>;
-    #[cfg(feature = "ltc")]
-    pub fn getrawtransaction(&mut self, txid: String, verbose: i32) -> RpcRequest<GetRawTransactionReply>;
-    pub fn gettxout(&mut self, txid: String, vout: i64, unconfirmed: bool) -> RpcRequest<GetTxOutReply>;
+    pub fn getnewaddress(&mut self, account: Option<String>, address_type: Option<String>) -> RpcRequest<String>;
     pub fn getrawmempool(&mut self, format: bool) -> RpcRequest<RawMemPool>;
+    #[cfg(not(feature = "ltc"))] pub fn getrawtransaction(&mut self, txid: String, verbose: bool) -> RpcRequest<GetRawTransactionReply>;
+    #[cfg(feature = "ltc")] pub fn getrawtransaction(&mut self, txid: String, verbose: i32) -> RpcRequest<GetRawTransactionReply>;
+    pub fn gettxout(&mut self, txid: String, vout: i64, unconfirmed: bool) -> RpcRequest<GetTxOutReply>;
+    pub fn sendrawtransaction(&mut self, transaction: String, allow_high_fee: Option<bool>) -> RpcRequest<String>;
+    pub fn sendtoaddress(&mut self, address: String, amount: f64, comment: Option<String>, comment_to: Option<String>, include_fee: Option<bool>) -> RpcRequest<String>;
+    pub fn signrawtransaction(&mut self, transaction: String, outputs: Option<Vec<TxOutput>>, privkeys: Option<Vec<String>>, sig_hash_type: Option<String>) -> RpcRequest<SignedTx>;
 });
 
 pub type BitcoinRpc = BitcoinRpcClient<jsonrpc_client_http::HttpHandle>;
