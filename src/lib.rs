@@ -9,12 +9,12 @@ use jsonrpc_client_http::HttpTransport;
 use hyper::header::{Authorization, Basic};
 use std::collections::HashMap;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct SerializedData {
     pub result: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Block {
     pub hash: String,
@@ -33,7 +33,7 @@ pub struct Block {
     pub nextblockhash: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct FullBlock {
     pub hash: String,
@@ -56,7 +56,7 @@ pub struct FullBlock {
     pub nextblockhash: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct Transaction {
     pub txid: String,
     pub hash: String,
@@ -73,14 +73,14 @@ pub struct Transaction {
     pub blocktime: Option<i64>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum Vin {
     Coinbase(VinCoinbase),
     Tx(VinTx),
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct VinTx {
     pub txid: String,
@@ -90,13 +90,13 @@ pub struct VinTx {
     pub sequence: i64
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct VinCoinbase {
     pub coinbase: String,
     pub sequence: i64
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Vout {
     pub value: serde_json::Number,
@@ -105,7 +105,7 @@ pub struct Vout {
 }
 
 #[cfg(not(feature = "ltc"))]
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum GetBlockReply {
     Zero(SerializedData),
@@ -114,14 +114,14 @@ pub enum GetBlockReply {
 }
 
 #[cfg(feature = "ltc")]
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum GetBlockReply {
     False(SerializedData),
     True(Block),
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct Enforce {
     pub status: bool,
     pub found: i64,
@@ -129,7 +129,7 @@ pub struct Enforce {
     pub window: i64,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct Reject {
     pub status: bool,
     pub found: i64,
@@ -137,7 +137,7 @@ pub struct Reject {
     pub window: i64,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct Softfork {
     pub id: String,
     pub version: i64,
@@ -145,7 +145,7 @@ pub struct Softfork {
     pub reject: Reject,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct BlockChainInfo {
     pub chain: String,
     pub blocks: i64,
@@ -159,7 +159,7 @@ pub struct BlockChainInfo {
     pub softforks: Vec<Softfork>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct Tip {
     pub height: u64,
     pub hash: String,
@@ -167,7 +167,7 @@ pub struct Tip {
     pub status: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct MemPoolInfo {
     pub size: i64,
     pub bytes: i64,
@@ -176,7 +176,7 @@ pub struct MemPoolInfo {
     pub mempoolminfee: serde_json::Number,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct ScriptPubKey {
     pub asm: String,
     pub hex: String,
@@ -187,13 +187,13 @@ pub struct ScriptPubKey {
     pub addresses: Option<Vec<String>>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct ScriptSig {
     pub asm: String,
     pub hex: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TxOut {
     pub bestblock: String,
@@ -203,14 +203,14 @@ pub struct TxOut {
     pub coinbase: bool,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum GetTxOutReply {
     Null(()),
     TxOut(TxOut),
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct TxOutSetInfo {
     pub height: i64,
     pub bestblock: String,
@@ -222,7 +222,7 @@ pub struct TxOutSetInfo {
 }
 
 #[cfg(not(feature = "ltc"))]
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum GetRawTransactionReply {
     False(SerializedData),
@@ -230,14 +230,14 @@ pub enum GetRawTransactionReply {
 }
 
 #[cfg(feature = "ltc")]
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum GetRawTransactionReply {
     Zero(SerializedData),
     One(Transaction),
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct MemPoolTx {
     pub size: i64,
     pub fee: serde_json::Number,
@@ -254,7 +254,7 @@ pub struct MemPoolTx {
     pub depends: Vec<String>
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum RawMemPool {
     True(HashMap<String, MemPoolTx>),
@@ -278,7 +278,7 @@ pub struct TxOutput {
     pub redeem_script: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct SignedTx {
     pub hex: String,
     pub complete: bool,
