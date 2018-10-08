@@ -276,6 +276,7 @@ pub struct TxOutput {
     pub vout: i32,
     pub script_pub_key: String,
     pub redeem_script: Option<String>,
+    pub amount: serde_json::Number,
 }
 
 #[derive(Deserialize, Clone, Debug)]
