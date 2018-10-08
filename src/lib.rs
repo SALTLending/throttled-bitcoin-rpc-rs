@@ -261,7 +261,7 @@ pub enum RawMemPool {
     False(Vec<String>),
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone, Debug)]
 pub struct TxInput {
     pub txid: String,
     pub vout: i32,
@@ -269,7 +269,7 @@ pub struct TxInput {
     pub sequence: Option<i32>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone, Debug)]
 #[serde(rename_all="camelCase")]
 pub struct TxOutput {
     pub txid: String,
