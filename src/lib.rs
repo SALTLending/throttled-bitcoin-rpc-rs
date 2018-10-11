@@ -237,7 +237,7 @@ pub struct TxOutSetInfo {
     pub total_amount: serde_json::Number,
 }
 
-#[cfg(not(feature = "ltc"))]
+#[cfg(all(not(feature = "ltc"), not(feature = "doge")))]
 #[derive(Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum GetRawTransactionReply {
@@ -245,7 +245,7 @@ pub enum GetRawTransactionReply {
     True(Transaction),
 }
 
-#[cfg(feature = "ltc")]
+#[cfg(any(feature = "ltc", feature = "doge"))]
 #[derive(Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum GetRawTransactionReply {
