@@ -56,6 +56,7 @@ pub struct FullBlock {
     pub nextblockhash: Option<String>,
 }
 
+#[cfg(not(feature = "doge"))]
 #[derive(Deserialize, Clone, Debug)]
 pub struct Transaction {
     pub txid: String,
@@ -63,6 +64,21 @@ pub struct Transaction {
     pub version: i64,
     pub size: i64,
     pub vsize: i64,
+    pub locktime: i64,
+    pub vin: Vec<Vin>,
+    pub vout: Vec<Vout>,
+    pub hex: String,
+    pub blockhash: Option<String>,
+    pub confirmations: Option<i64>,
+    pub time: Option<i64>,
+    pub blocktime: Option<i64>,
+}
+
+#[cfg(feature = "doge")]
+#[derive(Deserialize, Clone, Debug)]
+pub struct Transaction {
+    pub txid: String,
+    pub version: i64,
     pub locktime: i64,
     pub vin: Vec<Vin>,
     pub vout: Vec<Vout>,
@@ -104,7 +120,7 @@ pub struct Vout {
     pub script_pub_key: ScriptPubKey,
 }
 
-#[cfg(not(feature = "ltc"))]
+#[cfg(all(not(feature = "ltc"), not(feature = "doge")))]
 #[derive(Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum GetBlockReply {
@@ -113,7 +129,7 @@ pub enum GetBlockReply {
     Two(FullBlock)
 }
 
-#[cfg(feature = "ltc")]
+#[cfg(any(feature = "ltc", feature = "doge"))]
 #[derive(Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum GetBlockReply {
@@ -289,15 +305,15 @@ jsonrpc_client!(pub struct BitcoinRpcClient {
     pub fn createrawtransaction(&mut self, inputs: Vec<TxInput>, outputs: HashMap<String, f64>, locktime: Option<i32>) -> RpcRequest<String>;
     pub fn dumpprivkey(&mut self, address: String) -> RpcRequest<String>;
     pub fn generate(&mut self, number: i32, iterations: Option<i32>) -> RpcRequest<Vec<String>>;
-    #[cfg(not(feature = "ltc"))] pub fn getblock(&mut self, header_hash: String, verbosity: i32) -> RpcRequest<GetBlockReply>;
-    #[cfg(feature = "ltc")] pub fn getblock(&mut self, header_hash: String, verbosity: bool) -> RpcRequest<GetBlockReply>;
+    #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getblock(&mut self, header_hash: String, verbosity: i32) -> RpcRequest<GetBlockReply>;
+    #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getblock(&mut self, header_hash: String, verbosity: bool) -> RpcRequest<GetBlockReply>;
     pub fn getblockchaininfo(&mut self) -> RpcRequest<BlockChainInfo>;
     pub fn getblockcount(&mut self) -> RpcRequest<i64>;
     pub fn getblockhash(&mut self, block_height: i64) -> RpcRequest<String>;
     pub fn getnewaddress(&mut self, account: Option<String>, address_type: Option<String>) -> RpcRequest<String>;
     pub fn getrawmempool(&mut self, format: bool) -> RpcRequest<RawMemPool>;
-    #[cfg(not(feature = "ltc"))] pub fn getrawtransaction(&mut self, txid: String, verbose: bool) -> RpcRequest<GetRawTransactionReply>;
-    #[cfg(feature = "ltc")] pub fn getrawtransaction(&mut self, txid: String, verbose: i32) -> RpcRequest<GetRawTransactionReply>;
+    #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getrawtransaction(&mut self, txid: String, verbose: bool) -> RpcRequest<GetRawTransactionReply>;
+    #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getrawtransaction(&mut self, txid: String, verbose: i32) -> RpcRequest<GetRawTransactionReply>;
     pub fn gettxout(&mut self, txid: String, vout: i64, unconfirmed: bool) -> RpcRequest<GetTxOutReply>;
     pub fn sendrawtransaction(&mut self, transaction: String, allow_high_fee: Option<bool>) -> RpcRequest<String>;
     pub fn sendtoaddress(&mut self, address: String, amount: f64, comment: Option<String>, comment_to: Option<String>, include_fee: Option<bool>) -> RpcRequest<String>;
