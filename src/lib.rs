@@ -9,10 +9,7 @@ use jsonrpc_client_http::HttpTransport;
 use hyper::header::{Authorization, Basic};
 use std::collections::HashMap;
 
-#[derive(Deserialize, Clone, Debug)]
-pub struct SerializedData {
-    pub result: String,
-}
+pub type SerializedData = String;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
