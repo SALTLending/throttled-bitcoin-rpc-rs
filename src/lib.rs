@@ -299,21 +299,21 @@ pub struct SignedTx {
 }
 
 jsonrpc_client!(pub struct BitcoinRpcClient {
-    pub fn createrawtransaction(&mut self, inputs: Vec<TxInput>, outputs: HashMap<String, f64>, locktime: Option<i32>) -> Result<String>;
-    pub fn dumpprivkey(&mut self, address: String) -> Result<String>;
-    pub fn generate(&mut self, number: i32, iterations: Option<i32>) -> Result<Vec<String>>;
-    #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getblock(&mut self, header_hash: String, verbosity: i32) -> Result<GetBlockReply>;
-    #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getblock(&mut self, header_hash: String, verbosity: bool) -> Result<GetBlockReply>;
-    pub fn getblockchaininfo(&mut self) -> Result<BlockChainInfo>;
-    pub fn getblockcount(&mut self) -> Result<i64>;
-    pub fn getblockhash(&mut self, block_height: i64) -> Result<String>;
-    pub fn getnewaddress(&mut self, account: Option<String>, address_type: Option<String>) -> Result<String>;
-    pub fn getrawmempool(&mut self, format: bool) -> Result<RawMemPool>;
-    #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getrawtransaction(&mut self, txid: String, verbose: bool) -> Result<GetRawTransactionReply>;
-    #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getrawtransaction(&mut self, txid: String, verbose: i32) -> Result<GetRawTransactionReply>;
-    pub fn gettxout(&mut self, txid: String, vout: i64, unconfirmed: bool) -> Result<GetTxOutReply>;
-    pub fn sendrawtransaction(&mut self, transaction: String, allow_high_fee: Option<bool>) -> Result<String>;
-    pub fn sendtoaddress(&mut self, address: String, amount: f64, comment: Option<String>, comment_to: Option<String>, include_fee: Option<bool>) -> Result<String>;
-    pub fn signrawtransaction(&mut self, transaction: String, outputs: Option<Vec<TxOutput>>, privkeys: Option<Vec<String>>, sig_hash_type: Option<String>) -> Result<SignedTx>;
+    pub fn createrawtransaction(&self, inputs: Vec<TxInput>, outputs: HashMap<String, f64>, locktime: Option<i32>) -> Result<String>;
+    pub fn dumpprivkey(&self, address: String) -> Result<String>;
+    pub fn generate(&self, number: i32, iterations: Option<i32>) -> Result<Vec<String>>;
+    #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getblock(&self, header_hash: String, verbosity: i32) -> Result<GetBlockReply>;
+    #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getblock(&self, header_hash: String, verbosity: bool) -> Result<GetBlockReply>;
+    pub fn getblockchaininfo(&self) -> Result<BlockChainInfo>;
+    pub fn getblockcount(&self) -> Result<i64>;
+    pub fn getblockhash(&self, block_height: i64) -> Result<String>;
+    pub fn getnewaddress(&self, account: Option<String>, address_type: Option<String>) -> Result<String>;
+    pub fn getrawmempool(&self, format: bool) -> Result<RawMemPool>;
+    #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getrawtransaction(&self, txid: String, verbose: bool) -> Result<GetRawTransactionReply>;
+    #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getrawtransaction(&self, txid: String, verbose: i32) -> Result<GetRawTransactionReply>;
+    pub fn gettxout(&self, txid: String, vout: i64, unconfirmed: bool) -> Result<GetTxOutReply>;
+    pub fn sendrawtransaction(&self, transaction: String, allow_high_fee: Option<bool>) -> Result<String>;
+    pub fn sendtoaddress(&self, address: String, amount: f64, comment: Option<String>, comment_to: Option<String>, include_fee: Option<bool>) -> Result<String>;
+    pub fn signrawtransaction(&self, transaction: String, outputs: Option<Vec<TxOutput>>, privkeys: Option<Vec<String>>, sig_hash_type: Option<String>) -> Result<SignedTx>;
 });
 

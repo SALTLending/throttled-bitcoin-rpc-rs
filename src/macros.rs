@@ -3,7 +3,7 @@ macro_rules! jsonrpc_client {
         $(#[$struct_attr:meta])*
         pub struct $struct_name:ident {$(
             $(#[$attr:meta])*
-            pub fn $method:ident(&mut $selff:ident $(, $arg_name:ident: $arg_ty:ty)*) -> Result<$return_ty:ty>;
+            pub fn $method:ident(&self$(, $arg_name:ident: $arg_ty:ty)*) -> Result<$return_ty:ty>;
         )*}
     ) => {
         use failure::Error;
@@ -44,7 +44,7 @@ macro_rules! jsonrpc_client {
 
             $(
                 $(#[$attr])*
-                pub fn $method(&mut self$(, $arg_name: $arg_ty)*) -> Result<$return_ty, Error> {
+                pub fn $method(&self$(, $arg_name: $arg_ty)*) -> Result<$return_ty, Error> {
                     let mut builder = self.client.post(&self.uri);
                     match (&self.user, &self.pass) {
                         (Some(ref u), Some(ref p)) => builder = builder.basic_auth(u, Some(p)),
