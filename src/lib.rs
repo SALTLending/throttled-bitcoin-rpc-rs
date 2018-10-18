@@ -53,23 +53,23 @@ pub struct FullBlock {
     pub nextblockhash: Option<String>,
 }
 
-#[cfg(not(feature = "doge"))]
-#[derive(Deserialize, Clone, Debug)]
-pub struct Transaction {
-    pub txid: String,
-    pub hash: String,
-    pub version: i64,
-    pub size: i64,
-    pub vsize: i64,
-    pub locktime: i64,
-    pub vin: Vec<Vin>,
-    pub vout: Vec<Vout>,
-    pub hex: String,
-    pub blockhash: Option<String>,
-    pub confirmations: Option<i64>,
-    pub time: Option<i64>,
-    pub blocktime: Option<i64>,
-}
+// #[cfg(not(feature = "doge"))]
+// #[derive(Deserialize, Clone, Debug)]
+// pub struct Transaction {
+//     pub txid: String,
+//     pub hash: String,
+//     pub version: i64,
+//     pub size: i64,
+//     pub vsize: i64,
+//     pub locktime: i64,
+//     pub vin: Vec<Vin>,
+//     pub vout: Vec<Vout>,
+//     pub hex: String,
+//     pub blockhash: Option<String>,
+//     pub confirmations: Option<i64>,
+//     pub time: Option<i64>,
+//     pub blocktime: Option<i64>,
+// }
 
 #[cfg(feature = "doge")]
 #[derive(Deserialize, Clone, Debug)]
@@ -117,14 +117,14 @@ pub struct Vout {
     pub script_pub_key: ScriptPubKey,
 }
 
-#[cfg(all(not(feature = "ltc"), not(feature = "doge")))]
-#[derive(Deserialize, Clone, Debug)]
-#[serde(untagged)]
-pub enum GetBlockReply {
-    Zero(SerializedData),
-    One(Block),
-    Two(FullBlock)
-}
+// #[cfg(all(not(feature = "ltc"), not(feature = "doge")))]
+// #[derive(Deserialize, Clone, Debug)]
+// #[serde(untagged)]
+// pub enum GetBlockReply {
+//     Zero(SerializedData),
+//     One(Block),
+//     Two(FullBlock)
+// }
 
 #[cfg(any(feature = "ltc", feature = "doge"))]
 #[derive(Deserialize, Clone, Debug)]
