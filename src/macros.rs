@@ -57,7 +57,7 @@ macro_rules! jsonrpc_client {
                         id: req_id::new_v4(),
                     });
                     let mut res = builder.send()?;
-                    println!("{}", res.text()?);
+                    res.copy_to(&mut std::io::stdout())?;
                     let body: RpcResponse<$return_ty> = res.json()?;
                     match body.result {
                         Some(a) => Ok(a),
