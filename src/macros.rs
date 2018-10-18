@@ -126,7 +126,7 @@ macro_rules! jsonrpc_client {
                                         Some(b) => return Ok(reply::$method_b::$title(b)),
                                         _ => bail!("{:?}", a.error),
                                     },
-                                    Err(e) => (),
+                                    Err(_) => (),
                                 };
                             )+
                             Err(format_err!("Cannot deserialize to any variant of reply::{}", stringify!($method_b)))
