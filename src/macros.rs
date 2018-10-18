@@ -16,8 +16,11 @@ macro_rules! jsonrpc_client {
             )+
         }
     ) => {
+        use std::marker::PhantomData;
         use failure::Error;
         use reqwest as rq;
+        use serde::Deserialize;
+        use serde::Serialize;
         use std::sync::Mutex;
         use uuid::Uuid as req_id;
 
@@ -33,6 +36,17 @@ macro_rules! jsonrpc_client {
             pub method: String,
             pub params: T,
             pub id: req_id,
+        }
+
+        impl<T> RpcRequest<T>
+        where T: Serialize {
+            pub fn polymorphize(self) -> RpcRequest<serde_json::Value> {
+                RpcRequest {
+                    method: self.method,
+                    params: serde_json::from_str(&serde_json::to_string(&self.params).unwrap()).unwrap(),
+                    id: self.id,
+                }
+            }
         }
 
         pub mod reply {
@@ -63,23 +77,79 @@ macro_rules! jsonrpc_client {
             )+
         }
 
+        pub struct ReqBatcher<$struct_name> {
+            reqs: Vec<RpcRequest<serde_json::Value>>,
+            phantom: PhantomData<$struct_name>,
+        }
+
+        pub trait BatchRequest<$struct_name> {
+            fn new() -> Self;
+
+            $(
+                $(
+                    $(#[$attr_a])*
+                    fn $method_a(&self$(, $arg_name_a: $arg_ty_a)*) -> ();
+                )*
+                $(
+                    $(#[$attr_b])*
+                    fn $method_b(&self$(, $arg_name_b: $arg_ty_b)*) -> ();
+                )*
+            )*
+        }
+
+        impl BatchRequest<$struct_name> for Mutex<ReqBatcher<$struct_name>> {
+            fn new() -> Self {
+                Mutex::new(ReqBatcher {
+                    reqs: Vec::new(),
+                    phantom: PhantomData,
+                })
+            }
+            $(
+                $(
+                    $(#[$attr_a])*
+                    fn $method_a(&self$(, $arg_name_a: $arg_ty_a)*) -> () {
+                        let body = RpcRequest {
+                            method: stringify!($method_a).to_owned(),
+                            params: ($($arg_name_a,)*),
+                            id: req_id::new_v4(),
+                        }.polymorphize();
+                        self.lock().unwrap().reqs.push(body);
+                    }
+                )*
+                $(
+                    $(#[$attr_b])*
+                    fn $method_b(&self$(, $arg_name_b: $arg_ty_b)*) -> () {
+                        let body = RpcRequest {
+                            method: stringify!($method_b).to_owned(),
+                            params: ($($arg_name_b,)*),
+                            id: req_id::new_v4(),
+                        }.polymorphize();
+                        self.lock().unwrap().reqs.push(body);
+                    }
+                )*
+            )*
+        }
+
         $(#[$struct_attr])*
         pub struct $struct_name {
             client: rq::Client,
             uri: String,
             user: Option<String>,
             pass: Option<String>,
-            mutex: Option<Mutex<()>>,
+            mutex: bool,
+            pub batcher: Mutex<ReqBatcher<$struct_name>>,
         }
 
         impl $struct_name {
-            pub fn new(uri: String, user: Option<String>, pass: Option<String>, mutex: Option<Mutex<()>>) -> Self {
+            pub fn new(uri: String, user: Option<String>, pass: Option<String>, mutex: bool) -> Self {
+                use BatchRequest;
                 $struct_name {
                     client: rq::Client::new(),
                     uri,
                     user,
                     pass,
                     mutex,
+                    batcher: BatchRequest::new(),
                 }
             }
             $(
@@ -98,13 +168,13 @@ macro_rules! jsonrpc_client {
                             id: req_id::new_v4(),
                         });
                         let mut res = match self.mutex {
-                            Some(ref m) => {
-                                let lock = m.lock().unwrap();
+                            true => {
+                                let lock = self.batcher.lock().unwrap();
                                 let res = builder.send()?;
                                 drop(lock);
                                 res
                             },
-                            None => builder.send()?
+                            false => builder.send()?
                         };
                         let txt = res.text()?;
                         let body: RpcResponse<$return_ty_a> = serde_json::from_str(&txt)?;
@@ -129,13 +199,13 @@ macro_rules! jsonrpc_client {
                             id: req_id::new_v4(),
                         });
                         let mut res = match self.mutex {
-                            Some(ref m) => {
-                                let lock = m.lock().unwrap();
+                            true => {
+                                let lock = self.batcher.lock().unwrap();
                                 let res = builder.send()?;
                                 drop(lock);
                                 res
                             },
-                            None => builder.send()?
+                            false => builder.send()?
                         };
                         let txt = res.text()?;
                         let body: reply::$method_b = (|txt: String| {
@@ -154,6 +224,26 @@ macro_rules! jsonrpc_client {
                     }
                 )*
             )*
+            pub fn send_batch<T: for<'de> Deserialize<'de>>(&self) -> Result<Vec<T>, Error> {
+                let mut builder = self.client.post(&self.uri);
+                match (&self.user, &self.pass) {
+                    (Some(ref u), Some(ref p)) => builder = builder.basic_auth(u, Some(p)),
+                    (Some(ref u), None) => builder = builder.basic_auth::<&str, &str>(u, None),
+                    _ => (),
+                };
+                let mut batcher_lock = self.batcher.lock().unwrap();
+                builder = builder.json(&batcher_lock.reqs);
+                let mut res = builder.send()?;
+                batcher_lock.reqs = Vec::new();
+                drop(batcher_lock);
+                let json: Vec<RpcResponse<T>> = res.json()?;
+                json.into_iter().map(|reply| {
+                    match reply.result {
+                        Some(b) => Ok(b),
+                        _ => Err(format_err!("{:?}", reply.error)),
+                    }
+                }).collect()
+            }
         }
     };
 }
