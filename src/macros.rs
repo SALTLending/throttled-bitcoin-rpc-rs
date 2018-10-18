@@ -52,8 +52,8 @@ macro_rules! jsonrpc_client {
                         _ => (),
                     };
                     builder = builder.json(&RpcRequest {
-                        method: "$method".to_owned(),
-                        params: ($($arg_name),*),
+                        method: stringify!($method).to_owned(),
+                        params: ($($arg_name,)*),
                         id: req_id::new_v4(),
                     });
                     let mut res = builder.send()?;
