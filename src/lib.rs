@@ -87,6 +87,7 @@ pub struct Transaction {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(untagged)]
 pub enum Vin {
     Coinbase(VinCoinbase),
     Tx(VinTx),
@@ -114,23 +115,6 @@ pub struct Vout {
     pub value: serde_json::Number,
     pub n: serde_json::Number,
     pub script_pub_key: ScriptPubKey,
-}
-
-#[cfg(all(not(feature = "ltc"), not(feature = "doge")))]
-#[derive(Deserialize, Clone, Debug)]
-#[serde(untagged)]
-pub enum GetBlockReply {
-    Zero(SerializedData),
-    One(Block),
-    Two(FullBlock)
-}
-
-#[cfg(any(feature = "ltc", feature = "doge"))]
-#[derive(Deserialize, Clone, Debug)]
-#[serde(untagged)]
-pub enum GetBlockReply {
-    False(SerializedData),
-    True(Block),
 }
 
 #[derive(Deserialize, Clone, Debug)]
