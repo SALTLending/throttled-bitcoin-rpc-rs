@@ -53,23 +53,23 @@ pub struct FullBlock {
     pub nextblockhash: Option<String>,
 }
 
-// #[cfg(not(feature = "doge"))]
-// #[derive(Deserialize, Clone, Debug)]
-// pub struct Transaction {
-//     pub txid: String,
-//     pub hash: String,
-//     pub version: i64,
-//     pub size: i64,
-//     pub vsize: i64,
-//     pub locktime: i64,
-//     pub vin: Vec<Vin>,
-//     pub vout: Vec<Vout>,
-//     pub hex: String,
-//     pub blockhash: Option<String>,
-//     pub confirmations: Option<i64>,
-//     pub time: Option<i64>,
-//     pub blocktime: Option<i64>,
-// }
+#[cfg(not(feature = "doge"))]
+#[derive(Deserialize, Clone, Debug)]
+pub struct Transaction {
+    pub txid: String,
+    pub hash: String,
+    pub version: i64,
+    pub size: i64,
+    pub vsize: i64,
+    pub locktime: i64,
+    pub vin: Vec<Vin>,
+    pub vout: Vec<Vout>,
+    pub hex: String,
+    pub blockhash: Option<String>,
+    pub confirmations: Option<i64>,
+    pub time: Option<i64>,
+    pub blocktime: Option<i64>,
+}
 
 #[cfg(feature = "doge")]
 #[derive(Deserialize, Clone, Debug)]
@@ -87,26 +87,19 @@ pub struct Transaction {
 }
 
 #[derive(Deserialize, Clone, Debug)]
-#[serde(untagged)]
-pub enum Vin {
-    Coinbase(VinCoinbase),
-    Tx(VinTx),
-}
-
-#[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct VinTx {
+pub struct Vin {
     pub txid: String,
-    pub vout: i64,
+    pub vout: serde_json::Number,
     pub script_sig: ScriptSig,
     pub txinwitness: Option<Vec<String>>,
-    pub sequence: i64
+    pub sequence: serde_json::Number,
 }
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct VinCoinbase {
     pub coinbase: String,
-    pub sequence: i64
+    pub sequence: serde_json::Number,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -117,14 +110,14 @@ pub struct Vout {
     pub script_pub_key: ScriptPubKey,
 }
 
-// #[cfg(all(not(feature = "ltc"), not(feature = "doge")))]
-// #[derive(Deserialize, Clone, Debug)]
-// #[serde(untagged)]
-// pub enum GetBlockReply {
-//     Zero(SerializedData),
-//     One(Block),
-//     Two(FullBlock)
-// }
+#[cfg(all(not(feature = "ltc"), not(feature = "doge")))]
+#[derive(Deserialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum GetBlockReply {
+    Zero(SerializedData),
+    One(Block),
+    Two(FullBlock)
+}
 
 #[cfg(any(feature = "ltc", feature = "doge"))]
 #[derive(Deserialize, Clone, Debug)]
