@@ -15,14 +15,14 @@ pub type SerializedData = String;
 #[serde(rename_all = "camelCase")]
 pub struct Block {
     pub hash: String,
-    pub confirmations: i64,
-    pub size: i64,
-    pub height: i64,
-    pub version: i64,
+    pub confirmations: serde_json::Number,
+    pub size: serde_json::Number,
+    pub height: serde_json::Number,
+    pub version: serde_json::Number,
     pub merkleroot: String,
     pub tx: Vec<String>,
-    pub time: i64,
-    pub nonce: i64,
+    pub time: serde_json::Number,
+    pub nonce: serde_json::Number,
     pub bits: String,
     pub difficulty: serde_json::Number,
     pub chainwork: String,
@@ -34,18 +34,18 @@ pub struct Block {
 #[serde(rename_all = "camelCase")]
 pub struct FullBlock {
     pub hash: String,
-    pub confirmations: i64,
-    pub strippedsize: i64,
-    pub size: i64,
-    pub weight: i64,
-    pub height: i64,
-    pub version: i64,
+    pub confirmations: serde_json::Number,
+    pub strippedsize: serde_json::Number,
+    pub size: serde_json::Number,
+    pub weight: serde_json::Number,
+    pub height: serde_json::Number,
+    pub version: serde_json::Number,
     pub version_hex: String,
     pub merkleroot: String,
     pub tx: Vec<Transaction>,
-    pub time: i64,
-    pub mediantime: i64,
-    pub nonce: i64,
+    pub time: serde_json::Number,
+    pub mediantime: serde_json::Number,
+    pub nonce: serde_json::Number,
     pub bits: String,
     pub difficulty: serde_json::Number,
     pub chainwork: String,
@@ -58,32 +58,32 @@ pub struct FullBlock {
 pub struct Transaction {
     pub txid: String,
     pub hash: String,
-    pub version: i64,
-    pub size: i64,
-    pub vsize: i64,
-    pub locktime: i64,
+    pub version: serde_json::Number,
+    pub size: serde_json::Number,
+    pub vsize: serde_json::Number,
+    pub locktime: serde_json::Number,
     pub vin: Vec<Vin>,
     pub vout: Vec<Vout>,
     pub hex: String,
     pub blockhash: Option<String>,
-    pub confirmations: Option<i64>,
-    pub time: Option<i64>,
-    pub blocktime: Option<i64>,
+    pub confirmations: Option<serde_json::Number>,
+    pub time: Option<serde_json::Number>,
+    pub blocktime: Option<serde_json::Number>,
 }
 
 #[cfg(feature = "doge")]
 #[derive(Deserialize, Clone, Debug)]
 pub struct Transaction {
     pub txid: String,
-    pub version: i64,
-    pub locktime: i64,
+    pub version: serde_json::Number,
+    pub locktime: serde_json::Number,
     pub vin: Vec<Vin>,
     pub vout: Vec<Vout>,
     pub hex: String,
     pub blockhash: Option<String>,
-    pub confirmations: Option<i64>,
-    pub time: Option<i64>,
-    pub blocktime: Option<i64>,
+    pub confirmations: Option<serde_json::Number>,
+    pub time: Option<serde_json::Number>,
+    pub blocktime: Option<serde_json::Number>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -112,7 +112,7 @@ pub struct VinCoinbase {
 #[serde(rename_all = "camelCase")]
 pub struct Vout {
     pub value: serde_json::Number,
-    pub n: i64,
+    pub n: serde_json::Number,
     pub script_pub_key: ScriptPubKey,
 }
 
@@ -136,23 +136,23 @@ pub enum GetBlockReply {
 #[derive(Deserialize, Clone, Debug)]
 pub struct Enforce {
     pub status: bool,
-    pub found: i64,
-    pub required: i64,
-    pub window: i64,
+    pub found: serde_json::Number,
+    pub required: serde_json::Number,
+    pub window: serde_json::Number,
 }
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Reject {
     pub status: bool,
-    pub found: i64,
-    pub required: i64,
-    pub window: i64,
+    pub found: serde_json::Number,
+    pub required: serde_json::Number,
+    pub window: serde_json::Number,
 }
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Softfork {
     pub id: String,
-    pub version: i64,
+    pub version: serde_json::Number,
     pub enforce: Enforce,
     pub reject: Reject,
 }
@@ -160,11 +160,11 @@ pub struct Softfork {
 #[derive(Deserialize, Clone, Debug)]
 pub struct BlockChainInfo {
     pub chain: String,
-    pub blocks: i64,
-    pub headers: i64,
+    pub blocks: serde_json::Number,
+    pub headers: serde_json::Number,
     pub bestblockhash: String,
     pub difficulty: serde_json::Number,
-    pub mediantime: i64,
+    pub mediantime: serde_json::Number,
     pub verificationprogress: serde_json::Number,
     pub chainwork: String,
     pub pruned: bool,
@@ -173,18 +173,18 @@ pub struct BlockChainInfo {
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Tip {
-    pub height: u64,
+    pub height: serde_json::Number,
     pub hash: String,
-    pub branchlen: u64,
+    pub branchlen: serde_json::Number,
     pub status: String,
 }
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct MemPoolInfo {
-    pub size: i64,
-    pub bytes: i64,
-    pub usage: i64,
-    pub maxmempool: i64,
+    pub size: serde_json::Number,
+    pub bytes: serde_json::Number,
+    pub usage: serde_json::Number,
+    pub maxmempool: serde_json::Number,
     pub mempoolminfee: serde_json::Number,
 }
 
@@ -193,7 +193,7 @@ pub struct ScriptPubKey {
     pub asm: String,
     pub hex: String,
     #[serde(rename = "reqSigs")]
-    pub req_sigs: Option<i64>,
+    pub req_sigs: Option<serde_json::Number>,
     #[serde(rename = "type")]
     pub script_type: String,
     pub addresses: Option<Vec<String>>,
@@ -209,7 +209,7 @@ pub struct ScriptSig {
 #[serde(rename_all = "camelCase")]
 pub struct TxOut {
     pub bestblock: String,
-    pub confirmations: i64,
+    pub confirmations: serde_json::Number,
     pub value: serde_json::Number,
     pub script_pub_key: ScriptPubKey,
     pub coinbase: bool,
@@ -224,11 +224,11 @@ pub enum GetTxOutReply {
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct TxOutSetInfo {
-    pub height: i64,
+    pub height: serde_json::Number,
     pub bestblock: String,
-    pub transactions: i64,
-    pub txouts: i64,
-    pub bytes_serialized: i64,
+    pub transactions: serde_json::Number,
+    pub txouts: serde_json::Number,
+    pub bytes_serialized: serde_json::Number,
     pub hash_serialized: String,
     pub total_amount: serde_json::Number,
 }
@@ -251,17 +251,17 @@ pub enum GetRawTransactionReply {
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct MemPoolTx {
-    pub size: i64,
+    pub size: serde_json::Number,
     pub fee: serde_json::Number,
     pub modifiedfee: serde_json::Number,
-    pub time: i64,
-    pub height: i64,
-    pub descendantcount: i64,
-    pub descendantsize: i64,
-    pub descendantfees: i64,
-    pub ancestorcount: i64,
-    pub ancestorsize: i64,
-    pub ancestorfees: i64,
+    pub time: serde_json::Number,
+    pub height: serde_json::Number,
+    pub descendantcount: serde_json::Number,
+    pub descendantsize: serde_json::Number,
+    pub descendantfees: serde_json::Number,
+    pub ancestorcount: serde_json::Number,
+    pub ancestorsize: serde_json::Number,
+    pub ancestorfees: serde_json::Number,
     pub wtxid: String,
     pub depends: Vec<String>
 }
@@ -276,16 +276,16 @@ pub enum RawMemPool {
 #[derive(Serialize, Clone, Debug)]
 pub struct TxInput {
     pub txid: String,
-    pub vout: i32,
+    pub vout: serde_json::Number,
     #[serde(rename="Sequence")]
-    pub sequence: Option<i32>,
+    pub sequence: Option<serde_json::Number>,
 }
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all="camelCase")]
 pub struct TxOutput {
     pub txid: String,
-    pub vout: i32,
+    pub vout: serde_json::Number,
     pub script_pub_key: String,
     pub redeem_script: Option<String>,
     pub amount: serde_json::Number,
@@ -298,19 +298,19 @@ pub struct SignedTx {
 }
 
 jsonrpc_client!(pub struct BitcoinRpcClient {
-    pub fn createrawtransaction(&self, inputs: Vec<TxInput>, outputs: HashMap<String, f64>, locktime: Option<i32>) -> Result<String>;
+    pub fn createrawtransaction(&self, inputs: Vec<TxInput>, outputs: HashMap<String, f64>, locktime: Option<serde_json::Number>) -> Result<String>;
     pub fn dumpprivkey(&self, address: String) -> Result<String>;
-    pub fn generate(&self, number: i32, iterations: Option<i32>) -> Result<Vec<String>>;
-    #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getblock(&self, header_hash: String, verbosity: i32) -> Result<GetBlockReply>;
+    pub fn generate(&self, number: serde_json::Number, iterations: Option<serde_json::Number>) -> Result<Vec<String>>;
+    #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getblock(&self, header_hash: String, verbosity: serde_json::Number) -> Result<GetBlockReply>;
     #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getblock(&self, header_hash: String, verbosity: bool) -> Result<GetBlockReply>;
     pub fn getblockchaininfo(&self) -> Result<BlockChainInfo>;
-    pub fn getblockcount(&self) -> Result<i64>;
-    pub fn getblockhash(&self, block_height: i64) -> Result<String>;
+    pub fn getblockcount(&self) -> Result<serde_json::Number>;
+    pub fn getblockhash(&self, block_height: serde_json::Number) -> Result<String>;
     pub fn getnewaddress(&self, account: Option<String>, address_type: Option<String>) -> Result<String>;
     pub fn getrawmempool(&self, format: bool) -> Result<RawMemPool>;
     #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getrawtransaction(&self, txid: String, verbose: bool) -> Result<GetRawTransactionReply>;
-    #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getrawtransaction(&self, txid: String, verbose: i32) -> Result<GetRawTransactionReply>;
-    pub fn gettxout(&self, txid: String, vout: i64, unconfirmed: bool) -> Result<GetTxOutReply>;
+    #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getrawtransaction(&self, txid: String, verbose: serde_json::Number) -> Result<GetRawTransactionReply>;
+    pub fn gettxout(&self, txid: String, vout: serde_json::Number, unconfirmed: bool) -> Result<GetTxOutReply>;
     pub fn sendrawtransaction(&self, transaction: String, allow_high_fee: Option<bool>) -> Result<String>;
     pub fn sendtoaddress(&self, address: String, amount: f64, comment: Option<String>, comment_to: Option<String>, include_fee: Option<bool>) -> Result<String>;
     pub fn signrawtransaction(&self, transaction: String, outputs: Option<Vec<TxOutput>>, privkeys: Option<Vec<String>>, sig_hash_type: Option<String>) -> Result<SignedTx>;
