@@ -1,12 +1,12 @@
-#[macro_use] extern crate serde_derive;
+#[macro_use] extern crate failure;
+extern crate reqwest;
 extern crate serde;
+#[macro_use] extern crate serde_derive;
 extern crate serde_json;
-#[macro_use] extern crate jsonrpc_client_core;
-extern crate jsonrpc_client_http;
-extern crate hyper;
+extern crate uuid;
 
-use jsonrpc_client_http::HttpTransport;
-use hyper::header::{Authorization, Basic};
+#[macro_use] mod macros;
+
 use std::collections::HashMap;
 
 pub type SerializedData = String;
@@ -299,38 +299,21 @@ pub struct SignedTx {
 }
 
 jsonrpc_client!(pub struct BitcoinRpcClient {
-    pub fn createrawtransaction(&mut self, inputs: Vec<TxInput>, outputs: HashMap<String, f64>, locktime: Option<i32>) -> RpcRequest<String>;
-    pub fn dumpprivkey(&mut self, address: String) -> RpcRequest<String>;
-    pub fn generate(&mut self, number: i32, iterations: Option<i32>) -> RpcRequest<Vec<String>>;
-    #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getblock(&mut self, header_hash: String, verbosity: i32) -> RpcRequest<GetBlockReply>;
-    #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getblock(&mut self, header_hash: String, verbosity: bool) -> RpcRequest<GetBlockReply>;
-    pub fn getblockchaininfo(&mut self) -> RpcRequest<BlockChainInfo>;
-    pub fn getblockcount(&mut self) -> RpcRequest<i64>;
-    pub fn getblockhash(&mut self, block_height: i64) -> RpcRequest<String>;
-    pub fn getnewaddress(&mut self, account: Option<String>, address_type: Option<String>) -> RpcRequest<String>;
-    pub fn getrawmempool(&mut self, format: bool) -> RpcRequest<RawMemPool>;
-    #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getrawtransaction(&mut self, txid: String, verbose: bool) -> RpcRequest<GetRawTransactionReply>;
-    #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getrawtransaction(&mut self, txid: String, verbose: i32) -> RpcRequest<GetRawTransactionReply>;
-    pub fn gettxout(&mut self, txid: String, vout: i64, unconfirmed: bool) -> RpcRequest<GetTxOutReply>;
-    pub fn sendrawtransaction(&mut self, transaction: String, allow_high_fee: Option<bool>) -> RpcRequest<String>;
-    pub fn sendtoaddress(&mut self, address: String, amount: f64, comment: Option<String>, comment_to: Option<String>, include_fee: Option<bool>) -> RpcRequest<String>;
-    pub fn signrawtransaction(&mut self, transaction: String, outputs: Option<Vec<TxOutput>>, privkeys: Option<Vec<String>>, sig_hash_type: Option<String>) -> RpcRequest<SignedTx>;
+    pub fn createrawtransaction(&mut self, inputs: Vec<TxInput>, outputs: HashMap<String, f64>, locktime: Option<i32>) -> Result<String>;
+    pub fn dumpprivkey(&mut self, address: String) -> Result<String>;
+    pub fn generate(&mut self, number: i32, iterations: Option<i32>) -> Result<Vec<String>>;
+    #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getblock(&mut self, header_hash: String, verbosity: i32) -> Result<GetBlockReply>;
+    #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getblock(&mut self, header_hash: String, verbosity: bool) -> Result<GetBlockReply>;
+    pub fn getblockchaininfo(&mut self) -> Result<BlockChainInfo>;
+    pub fn getblockcount(&mut self) -> Result<i64>;
+    pub fn getblockhash(&mut self, block_height: i64) -> Result<String>;
+    pub fn getnewaddress(&mut self, account: Option<String>, address_type: Option<String>) -> Result<String>;
+    pub fn getrawmempool(&mut self, format: bool) -> Result<RawMemPool>;
+    #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getrawtransaction(&mut self, txid: String, verbose: bool) -> Result<GetRawTransactionReply>;
+    #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getrawtransaction(&mut self, txid: String, verbose: i32) -> Result<GetRawTransactionReply>;
+    pub fn gettxout(&mut self, txid: String, vout: i64, unconfirmed: bool) -> Result<GetTxOutReply>;
+    pub fn sendrawtransaction(&mut self, transaction: String, allow_high_fee: Option<bool>) -> Result<String>;
+    pub fn sendtoaddress(&mut self, address: String, amount: f64, comment: Option<String>, comment_to: Option<String>, include_fee: Option<bool>) -> Result<String>;
+    pub fn signrawtransaction(&mut self, transaction: String, outputs: Option<Vec<TxOutput>>, privkeys: Option<Vec<String>>, sig_hash_type: Option<String>) -> Result<SignedTx>;
 });
 
-pub type BitcoinRpc = BitcoinRpcClient<jsonrpc_client_http::HttpHandle>;
-
-/// Creates a connection to a bitcoin rpc server
-pub fn new_client(url: &str, user: Option<String>, pass: Option<String>) -> BitcoinRpcClient<jsonrpc_client_http::HttpHandle> {
-    // Check that if we have a password, we have a username; other way around is ok
-    debug_assert!(pass.is_none() || user.is_some());
-
-    let transport = HttpTransport::new().standalone().unwrap();
-    let mut transport_handle = transport.handle(url).unwrap();
-    if let Some(ref user) = user {
-        transport_handle.set_header(Authorization(Basic {
-            username: user.clone(),
-            password: pass.clone()
-        }));
-    }
-    return BitcoinRpcClient::new(transport_handle);
-}

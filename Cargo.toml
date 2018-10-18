@@ -10,12 +10,12 @@ documentation = "http://docs.rs/bitcoin-rpc/"
 description = "Bitcoin Rpc API client for rust."
 
 [dependencies]
-jsonrpc-client-core = { git = "https://github.com/DR-BoneZ/jsonrpc-client-rs.git", features = ["disable_version_check"] }
-jsonrpc-client-http = { git = "https://github.com/DR-BoneZ/jsonrpc-client-rs.git" }
-serde = "1.0.79"
-serde_derive = "1.0.79"
-serde_json = { version = "1.0.30", features = ["arbitrary_precision"] }
-hyper = "0.11.27"
+failure = "0.1.2"
+reqwest = "0.9.3"
+serde = "1.0.80"
+serde_derive = "1.0.80"
+serde_json = { version = "1.0.32", features = ["arbitrary_precision"] }
+uuid = { version = "0.7", features = ["serde", "v4"] }
 
 [features]
 ltc = []
