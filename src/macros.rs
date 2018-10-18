@@ -64,16 +64,16 @@ macro_rules! jsonrpc_client {
         }
 
         $(#[$struct_attr])*
-        pub struct $struct_name<'m> {
+        pub struct $struct_name {
             client: rq::Client,
             uri: String,
             user: Option<String>,
             pass: Option<String>,
-            mutex: Option<&'m Mutex<()>>,
+            mutex: Option<Mutex<()>>,
         }
 
-        impl<'m> $struct_name<'m> {
-            pub fn new(uri: String, user: Option<String>, pass: Option<String>, mutex: Option<&'m Mutex<()>>) -> Self {
+        impl $struct_name {
+            pub fn new(uri: String, user: Option<String>, pass: Option<String>, mutex: Option<Mutex<()>>) -> Self {
                 $struct_name {
                     client: rq::Client::new(),
                     uri,
@@ -97,9 +97,15 @@ macro_rules! jsonrpc_client {
                             params: ($($arg_name_a,)*),
                             id: req_id::new_v4(),
                         });
-                        let lock = self.mutex.map(|m| m.lock().unwrap());
-                        let mut res = builder.send()?;
-                        drop(lock);
+                        let mut res = match self.mutex {
+                            Some(ref m) => {
+                                let lock = m.lock().unwrap();
+                                let res = builder.send()?;
+                                drop(lock);
+                                res
+                            },
+                            None => builder.send()?
+                        };
                         let txt = res.text()?;
                         let body: RpcResponse<$return_ty_a> = serde_json::from_str(&txt)?;
                         match body.result {
@@ -122,9 +128,15 @@ macro_rules! jsonrpc_client {
                             params: ($($arg_name_b,)*),
                             id: req_id::new_v4(),
                         });
-                        let lock = self.mutex.map(|m| m.lock().unwrap());
-                        let mut res = builder.send()?;
-                        drop(lock);
+                        let mut res = match self.mutex {
+                            Some(ref m) => {
+                                let lock = m.lock().unwrap();
+                                let res = builder.send()?;
+                                drop(lock);
+                                res
+                            },
+                            None => builder.send()?
+                        };
                         let txt = res.text()?;
                         let body: reply::$method_b = (|txt: String| {
                             $(
