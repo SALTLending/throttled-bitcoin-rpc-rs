@@ -59,6 +59,7 @@ macro_rules! jsonrpc_client {
                     let mut res = builder.send()?;
                     let txt = res.text()?;
                     println!("{}", txt);
+                    println!("SIZE {}", std::mem::size_of::<Transaction>());
                     let body: RpcResponse<$return_ty> = serde_json::from_str(&txt)?;
                     match body.result {
                         Some(a) => Ok(a),
