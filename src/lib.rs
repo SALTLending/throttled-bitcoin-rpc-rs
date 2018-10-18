@@ -298,19 +298,19 @@ pub struct SignedTx {
 }
 
 jsonrpc_client!(pub struct BitcoinRpcClient {
-    pub fn createrawtransaction(&self, inputs: Vec<TxInput>, outputs: HashMap<String, f64>, locktime: Option<serde_json::Number>) -> Result<String>;
+    pub fn createrawtransaction(&self, inputs: Vec<TxInput>, outputs: HashMap<String, f64>, locktime: Option<isize>) -> Result<String>;
     pub fn dumpprivkey(&self, address: String) -> Result<String>;
-    pub fn generate(&self, number: serde_json::Number, iterations: Option<serde_json::Number>) -> Result<Vec<String>>;
-    #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getblock(&self, header_hash: String, verbosity: serde_json::Number) -> Result<GetBlockReply>;
+    pub fn generate(&self, number: isize, iterations: Option<isize>) -> Result<Vec<String>>;
+    #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getblock(&self, header_hash: String, verbosity: isize) -> Result<GetBlockReply>;
     #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getblock(&self, header_hash: String, verbosity: bool) -> Result<GetBlockReply>;
     pub fn getblockchaininfo(&self) -> Result<BlockChainInfo>;
-    pub fn getblockcount(&self) -> Result<serde_json::Number>;
-    pub fn getblockhash(&self, block_height: serde_json::Number) -> Result<String>;
+    pub fn getblockcount(&self) -> Result<isize>;
+    pub fn getblockhash(&self, block_height: isize) -> Result<String>;
     pub fn getnewaddress(&self, account: Option<String>, address_type: Option<String>) -> Result<String>;
     pub fn getrawmempool(&self, format: bool) -> Result<RawMemPool>;
     #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getrawtransaction(&self, txid: String, verbose: bool) -> Result<GetRawTransactionReply>;
-    #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getrawtransaction(&self, txid: String, verbose: serde_json::Number) -> Result<GetRawTransactionReply>;
-    pub fn gettxout(&self, txid: String, vout: serde_json::Number, unconfirmed: bool) -> Result<GetTxOutReply>;
+    #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getrawtransaction(&self, txid: String, verbose: isize) -> Result<GetRawTransactionReply>;
+    pub fn gettxout(&self, txid: String, vout: isize, unconfirmed: bool) -> Result<GetTxOutReply>;
     pub fn sendrawtransaction(&self, transaction: String, allow_high_fee: Option<bool>) -> Result<String>;
     pub fn sendtoaddress(&self, address: String, amount: f64, comment: Option<String>, comment_to: Option<String>, include_fee: Option<bool>) -> Result<String>;
     pub fn signrawtransaction(&self, transaction: String, outputs: Option<Vec<TxOutput>>, privkeys: Option<Vec<String>>, sig_hash_type: Option<String>) -> Result<SignedTx>;
