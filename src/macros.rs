@@ -121,12 +121,13 @@ macro_rules! jsonrpc_client {
                         let txt = res.text()?;
                         let body: reply::$method_b = (|txt: String| {
                             $(
+                                println!("trying {}", stringify!($return_ty_b));
                                 match serde_json::from_str::<RpcResponse<$return_ty_b>>(&txt) {
                                     Ok(a) => match a.result {
                                         Some(b) => return Ok(reply::$method_b::$title(b)),
                                         _ => bail!("{:?}", a.error),
                                     },
-                                    _ => (),
+                                    e => println!("{:?}", e),
                                 };
                             )+
                             Err(format_err!("Cannot deserialize to any variant of reply::{}", stringify!($method_b)))
