@@ -87,8 +87,14 @@ pub struct Transaction {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+pub enum Vin {
+    Coinbase(VinCoinbase),
+    Tx(VinTx),
+}
+
+#[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Vin {
+pub struct VinTx {
     pub txid: String,
     pub vout: serde_json::Number,
     pub script_sig: ScriptSig,
