@@ -88,11 +88,11 @@ macro_rules! jsonrpc_client {
             $(
                 $(
                     $(#[$attr_a])*
-                    fn $method_a(&self$(, $arg_name_a: $arg_ty_a)*) -> ();
+                    fn $method_a(&self$(, $arg_name_a: $arg_ty_a)*) -> req_id;
                 )*
                 $(
                     $(#[$attr_b])*
-                    fn $method_b(&self$(, $arg_name_b: $arg_ty_b)*) -> ();
+                    fn $method_b(&self$(, $arg_name_b: $arg_ty_b)*) -> req_id;
                 )*
             )*
         }
@@ -107,24 +107,28 @@ macro_rules! jsonrpc_client {
             $(
                 $(
                     $(#[$attr_a])*
-                    fn $method_a(&self$(, $arg_name_a: $arg_ty_a)*) -> () {
+                    fn $method_a(&self$(, $arg_name_a: $arg_ty_a)*) -> req_id {
+                        let id = req_id::new_v4();
                         let body = RpcRequest {
                             method: stringify!($method_a).to_owned(),
                             params: ($($arg_name_a,)*),
-                            id: req_id::new_v4(),
+                            id,
                         }.polymorphize();
                         self.lock().unwrap().reqs.push(body);
+                        id
                     }
                 )*
                 $(
                     $(#[$attr_b])*
-                    fn $method_b(&self$(, $arg_name_b: $arg_ty_b)*) -> () {
+                    fn $method_b(&self$(, $arg_name_b: $arg_ty_b)*) -> req_id {
+                        let id = req_id::new_v4();
                         let body = RpcRequest {
                             method: stringify!($method_b).to_owned(),
                             params: ($($arg_name_b,)*),
-                            id: req_id::new_v4(),
+                            id,
                         }.polymorphize();
                         self.lock().unwrap().reqs.push(body);
+                        id
                     }
                 )*
             )*
@@ -224,7 +228,7 @@ macro_rules! jsonrpc_client {
                     }
                 )*
             )*
-            pub fn send_batch<T: for<'de> Deserialize<'de>>(&self) -> Result<Vec<T>, Error> {
+            pub fn send_batch<T: for<'de> Deserialize<'de>>(&self) -> Result<HashMap<req_id, T>, Error> {
                 let mut builder = self.client.post(&self.uri);
                 match (&self.user, &self.pass) {
                     (Some(ref u), Some(ref p)) => builder = builder.basic_auth(u, Some(p)),
@@ -238,10 +242,10 @@ macro_rules! jsonrpc_client {
                 drop(batcher_lock);
                 let json: Vec<RpcResponse<T>> = res.json()?;
                 json.into_iter().map(|reply| {
-                    match reply.result {
-                        Some(b) => Ok(b),
-                        _ => Err(format_err!("{:?}", reply.error)),
-                    }
+                    Ok((reply.id, match reply.result {
+                        Some(b) => b,
+                        _ => bail!("{:?}", reply.error),
+                    }))
                 }).collect()
             }
         }
