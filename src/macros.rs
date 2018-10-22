@@ -201,7 +201,7 @@ macro_rules! jsonrpc_client {
                         let mut res = builder.send()?;
                         if self.max_concurrency > 0 {
                             let mut lock = self.counter.0.lock().unwrap();
-                            *lock = *lock + 1;
+                            *lock = *lock - 1;
                             self.counter.1.notify_one();
                             drop(lock);
                         }
@@ -253,7 +253,7 @@ macro_rules! jsonrpc_client {
                         let mut res = builder.send()?;
                         if self.max_concurrency > 0 {
                             let mut lock = self.counter.0.lock().unwrap();
-                            *lock = *lock + 1;
+                            *lock = *lock - 1;
                             self.counter.1.notify_one();
                             drop(lock);
                         }
@@ -311,7 +311,7 @@ macro_rules! jsonrpc_client {
                 drop(batcher_lock);
                 if self.max_concurrency > 0 {
                     let mut lock = self.counter.0.lock().unwrap();
-                    *lock = *lock + 1;
+                    *lock = *lock - 1;
                     self.counter.1.notify_one();
                     drop(lock);
                 }
