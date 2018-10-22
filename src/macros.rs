@@ -21,14 +21,14 @@ macro_rules! jsonrpc_client {
         use reqwest as rq;
         use serde::Deserialize;
         use serde::Serialize;
-        use std::sync::Mutex;
+        use std::sync::{Condvar, Mutex};
         use uuid::Uuid as req_id;
 
         #[derive(Deserialize)]
         struct RpcResponse<T> {
             pub result: Option<T>,
             pub error: serde_json::Value,
-            pub id: req_id,
+            pub id: Option<req_id>,
         }
 
         #[derive(Serialize)]
@@ -136,28 +136,27 @@ macro_rules! jsonrpc_client {
 
         $(#[$struct_attr])*
         pub struct $struct_name {
-            client: rq::Client,
             uri: String,
             user: Option<String>,
             pass: Option<String>,
-            mutex: bool,
+            max_concurrency: usize,
+            rps: usize,
+            counter: (Mutex<usize>, Condvar),
+            last_req: Mutex<std::time::Instant>,
             pub batcher: Mutex<ReqBatcher<$struct_name>>,
         }
 
         impl $struct_name {
-            pub fn new(uri: String, user: Option<String>, pass: Option<String>, mutex: bool) -> Self {
+            pub fn new(uri: String, user: Option<String>, pass: Option<String>, max_concurrency: usize, rps: usize) -> Self {
                 use BatchRequest;
-                let mut headers = rq::header::HeaderMap::new();
-                headers.insert(rq::header::CONNECTION, rq::header::HeaderValue::from_static("close"));
                 $struct_name {
-                    client: rq::Client::builder()
-                        .default_headers(headers)
-                        .build()
-                        .unwrap(),
                     uri,
                     user,
                     pass,
-                    mutex,
+                    max_concurrency,
+                    rps,
+                    counter: (Mutex::new(0), Condvar::new()),
+                    last_req: Mutex::new(std::time::Instant::now()),
                     batcher: BatchRequest::new(),
                 }
             }
@@ -165,7 +164,9 @@ macro_rules! jsonrpc_client {
                 $(
                     $(#[$attr_a])*
                     pub fn $method_a(&self$(, $arg_name_a: $arg_ty_a)*) -> Result<$return_ty_a, Error> {
-                        let mut builder = self.client.post(&self.uri);
+                        let mut builder = rq::Client::new()
+                            .post(&self.uri)
+                            .header(rq::header::CONNECTION, rq::header::HeaderValue::from_static("close"));
                         match (&self.user, &self.pass) {
                             (Some(ref u), Some(ref p)) => builder = builder.basic_auth(u, Some(p)),
                             (Some(ref u), None) => builder = builder.basic_auth::<&str, &str>(u, None),
@@ -176,15 +177,34 @@ macro_rules! jsonrpc_client {
                             params: ($($arg_name_a,)*),
                             id: req_id::new_v4(),
                         });
-                        let mut res = match self.mutex {
-                            true => {
-                                let lock = self.batcher.lock().unwrap();
-                                let res = builder.send()?;
-                                drop(lock);
-                                res
-                            },
-                            false => builder.send()?
-                        };
+                        if self.rps > 0 {
+                            let wait = std::time::Duration::from_secs(1) / self.rps as u32;
+                            let mut lock = self.last_req.lock().unwrap();
+                            let elapsed = lock.elapsed();
+                            if elapsed < wait {
+                                std::thread::sleep(wait - elapsed);
+                            }
+                            *lock = std::time::Instant::now();
+                            drop(lock);
+                        }
+                        if self.max_concurrency > 0 {
+                            let mut lock = self.counter.0.lock().unwrap();
+                            while *lock == self.max_concurrency {
+                                lock = self.counter.1.wait(lock).unwrap();
+                            }
+                            if *lock > self.max_concurrency {
+                                unreachable!();
+                            }
+                            *lock = *lock + 1;
+                            drop(lock);
+                        }
+                        let mut res = builder.send()?;
+                        if self.max_concurrency > 0 {
+                            let mut lock = self.counter.0.lock().unwrap();
+                            *lock = *lock + 1;
+                            self.counter.1.notify_one();
+                            drop(lock);
+                        }
                         let txt = res.text()?;
                         let body: RpcResponse<$return_ty_a> = serde_json::from_str(&txt)?;
                         match body.result {
@@ -196,7 +216,9 @@ macro_rules! jsonrpc_client {
                 $(
                     $(#[$attr_b])*
                     pub fn $method_b(&self$(, $arg_name_b: $arg_ty_b)*) -> Result<reply::$method_b, Error> {
-                        let mut builder = self.client.post(&self.uri);
+                        let mut builder = rq::Client::new()
+                            .post(&self.uri)
+                            .header(rq::header::CONNECTION, rq::header::HeaderValue::from_static("close"));
                         match (&self.user, &self.pass) {
                             (Some(ref u), Some(ref p)) => builder = builder.basic_auth(u, Some(p)),
                             (Some(ref u), None) => builder = builder.basic_auth::<&str, &str>(u, None),
@@ -207,15 +229,34 @@ macro_rules! jsonrpc_client {
                             params: ($($arg_name_b,)*),
                             id: req_id::new_v4(),
                         });
-                        let mut res = match self.mutex {
-                            true => {
-                                let lock = self.batcher.lock().unwrap();
-                                let res = builder.send()?;
-                                drop(lock);
-                                res
-                            },
-                            false => builder.send()?
-                        };
+                        if self.rps > 0 {
+                            let wait = std::time::Duration::from_secs(1) / self.rps as u32;
+                            let mut lock = self.last_req.lock().unwrap();
+                            let elapsed = lock.elapsed();
+                            if elapsed < wait {
+                                std::thread::sleep(wait - elapsed);
+                            }
+                            *lock = std::time::Instant::now();
+                            drop(lock);
+                        }
+                        if self.max_concurrency > 0 {
+                            let mut lock = self.counter.0.lock().unwrap();
+                            while *lock == self.max_concurrency {
+                                lock = self.counter.1.wait(lock).unwrap();
+                            }
+                            if *lock > self.max_concurrency {
+                                unreachable!();
+                            }
+                            *lock = *lock + 1;
+                            drop(lock);
+                        }
+                        let mut res = builder.send()?;
+                        if self.max_concurrency > 0 {
+                            let mut lock = self.counter.0.lock().unwrap();
+                            *lock = *lock + 1;
+                            self.counter.1.notify_one();
+                            drop(lock);
+                        }
                         let txt = res.text()?;
                         let body: reply::$method_b = (|txt: String| {
                             $(
@@ -234,23 +275,58 @@ macro_rules! jsonrpc_client {
                 )*
             )*
             pub fn send_batch<T: for<'de> Deserialize<'de>>(&self) -> Result<HashMap<req_id, T>, Error> {
-                let mut builder = self.client.post(&self.uri);
+                let mut builder = rq::Client::new()
+                    .post(&self.uri)
+                    .header(rq::header::CONNECTION, rq::header::HeaderValue::from_static("close"));
                 match (&self.user, &self.pass) {
                     (Some(ref u), Some(ref p)) => builder = builder.basic_auth(u, Some(p)),
                     (Some(ref u), None) => builder = builder.basic_auth::<&str, &str>(u, None),
                     _ => (),
                 };
+                if self.rps > 0 {
+                    let wait = std::time::Duration::from_secs(1) / self.rps as u32;
+                    let mut lock = self.last_req.lock().unwrap();
+                    let elapsed = lock.elapsed();
+                    if elapsed < wait {
+                        std::thread::sleep(wait - elapsed);
+                    }
+                    *lock = std::time::Instant::now();
+                    drop(lock);
+                }
+                if self.max_concurrency > 0 {
+                    let mut lock = self.counter.0.lock().unwrap();
+                    while *lock == self.max_concurrency {
+                        lock = self.counter.1.wait(lock).unwrap();
+                    }
+                    if *lock > self.max_concurrency {
+                        unreachable!();
+                    }
+                    *lock = *lock + 1;
+                    drop(lock);
+                }
                 let mut batcher_lock = self.batcher.lock().unwrap();
                 builder = builder.json(&batcher_lock.reqs);
                 let mut res = builder.send()?;
                 batcher_lock.reqs = Vec::new();
                 drop(batcher_lock);
-                let json: Vec<RpcResponse<T>> = res.json()?;
+                if self.max_concurrency > 0 {
+                    let mut lock = self.counter.0.lock().unwrap();
+                    *lock = *lock + 1;
+                    self.counter.1.notify_one();
+                    drop(lock);
+                }
+                let text = res.text()?;
+                let json = match serde_json::from_str::<Vec<RpcResponse<T>>>(&text) {
+                    Ok(a) => a,
+                    Err(_) => {
+                        bail!("{:?}", serde_json::from_str::<RpcResponse<T>>(&text)?.error)
+                    }
+                };
                 json.into_iter().map(|reply| {
-                    Ok((reply.id, match reply.result {
-                        Some(b) => b,
+                    Ok(match reply.result {
+                        Some(b) => (reply.id.unwrap_or_else(req_id::new_v4), b),
                         _ => bail!("{:?}", reply.error),
-                    }))
+                    })
                 }).collect()
             }
         }
