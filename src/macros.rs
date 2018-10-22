@@ -147,8 +147,13 @@ macro_rules! jsonrpc_client {
         impl $struct_name {
             pub fn new(uri: String, user: Option<String>, pass: Option<String>, mutex: bool) -> Self {
                 use BatchRequest;
+                let mut headers = rq::header::HeaderMap::new();
+                headers.insert(rq::header::CONNECTION, rq::header::HeaderValue::from_static("close"));
                 $struct_name {
-                    client: rq::Client::new(),
+                    client: rq::Client::builder()
+                        .default_headers(headers)
+                        .build()
+                        .unwrap(),
                     uri,
                     user,
                     pass,
