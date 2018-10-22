@@ -246,6 +246,7 @@ macro_rules! jsonrpc_client {
                 $(
                     $(#[$attr_b])*
                     pub fn $method_b(&self$(, $arg_name_b: $arg_ty_b)*) -> Result<reply::$method_b, Error> {
+                        println!(stringify!($method_a));
                         let mut builder = rq::Client::new()
                             .post(&self.uri)
                             .header(rq::header::CONNECTION, rq::header::HeaderValue::from_static("close"));
