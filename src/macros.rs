@@ -16,12 +16,11 @@ macro_rules! jsonrpc_client {
             )+
         }
     ) => {
-        use std::marker::PhantomData;
         use failure::Error;
         use reqwest as rq;
         use serde::Deserialize;
         use serde::Serialize;
-        use std::sync::{Condvar, Mutex};
+        use std::sync::{Arc, Condvar, Mutex};
         use uuid::Uuid as req_id;
 
         #[derive(Deserialize)]
@@ -77,58 +76,92 @@ macro_rules! jsonrpc_client {
             )+
         }
 
-        pub struct ReqBatcher<$struct_name> {
+        pub struct ReqBatcher<T> {
             reqs: Vec<RpcRequest<serde_json::Value>>,
-            phantom: PhantomData<$struct_name>,
+            resps: HashMap<req_id, serde_json::Value>,
+            max_batch_size: usize,
+            parent: Arc<T>,
         }
 
         pub trait BatchRequest<$struct_name> {
-            fn new() -> Self;
+            fn new(parent: Arc<$struct_name>, max_batch_size: usize) -> Self;
+
+            fn inner(&self) -> &Mutex<ReqBatcher<$struct_name>>;
 
             $(
                 $(
                     $(#[$attr_a])*
-                    fn $method_a(&self$(, $arg_name_a: $arg_ty_a)*) -> req_id;
+                    fn $method_a(&self$(, $arg_name_a: $arg_ty_a)*) -> Result<req_id, Error>;
                 )*
                 $(
                     $(#[$attr_b])*
-                    fn $method_b(&self$(, $arg_name_b: $arg_ty_b)*) -> req_id;
+                    fn $method_b(&self$(, $arg_name_b: $arg_ty_b)*) -> Result<req_id, Error>;
                 )*
             )*
         }
 
-        impl BatchRequest<$struct_name> for Mutex<ReqBatcher<$struct_name>> {
-            fn new() -> Self {
-                Mutex::new(ReqBatcher {
+        impl BatchRequest<$struct_name> for Option<Mutex<ReqBatcher<$struct_name>>> {
+            fn new(parent: Arc<$struct_name>, max_batch_size: usize) -> Self {
+                Some(Mutex::new(ReqBatcher {
                     reqs: Vec::new(),
-                    phantom: PhantomData,
-                })
+                    resps: HashMap::new(),
+                    max_batch_size,
+                    parent,
+                }))
             }
+
+            fn inner(&self) -> &Mutex<ReqBatcher<$struct_name>> {
+                match self {
+                    Some(a) => a,
+                    None => panic!("batcher not initialized!")
+                }
+            }
+
             $(
                 $(
                     $(#[$attr_a])*
-                    fn $method_a(&self$(, $arg_name_a: $arg_ty_a)*) -> req_id {
+                    fn $method_a(&self$(, $arg_name_a: $arg_ty_a)*) -> Result<req_id, Error> {
                         let id = req_id::new_v4();
                         let body = RpcRequest {
                             method: stringify!($method_a).to_owned(),
                             params: ($($arg_name_a,)*),
                             id,
                         }.polymorphize();
-                        self.lock().unwrap().reqs.push(body);
-                        id
+                        let self_lock = self.inner().lock().unwrap();
+                        if self_lock.reqs.len() >= self_lock.max_batch_size {
+                            let parent = self_lock.parent.clone();
+                            drop(self_lock);
+                            let batch_response: HashMap<req_id, serde_json::Value> = parent.send_batch()?;
+                            let mut self_lock = self.inner().lock().unwrap();
+                            self_lock.resps.extend(batch_response);
+                            drop(self_lock);
+                        }
+                        let mut self_lock = self.inner().lock().unwrap();
+                        self_lock.reqs.push(body);
+                        Ok(id)
                     }
                 )*
                 $(
                     $(#[$attr_b])*
-                    fn $method_b(&self$(, $arg_name_b: $arg_ty_b)*) -> req_id {
+                    fn $method_b(&self$(, $arg_name_b: $arg_ty_b)*) -> Result<req_id, Error> {
                         let id = req_id::new_v4();
                         let body = RpcRequest {
                             method: stringify!($method_b).to_owned(),
                             params: ($($arg_name_b,)*),
                             id,
                         }.polymorphize();
-                        self.lock().unwrap().reqs.push(body);
-                        id
+                        let self_lock = self.inner().lock().unwrap();
+                        if self_lock.reqs.len() >= self_lock.max_batch_size {
+                            let parent = self_lock.parent.clone();
+                            drop(self_lock);
+                            let batch_response: HashMap<req_id, serde_json::Value> = parent.send_batch()?;
+                            let mut self_lock = self.inner().lock().unwrap();
+                            self_lock.resps.extend(batch_response);
+                            drop(self_lock);
+                        }
+                        let mut self_lock = self.inner().lock().unwrap();
+                        self_lock.reqs.push(body);
+                        Ok(id)
                     }
                 )*
             )*
@@ -143,13 +176,13 @@ macro_rules! jsonrpc_client {
             rps: usize,
             counter: (Mutex<usize>, Condvar),
             last_req: Mutex<std::time::Instant>,
-            pub batcher: Mutex<ReqBatcher<$struct_name>>,
+            pub batcher: Option<Mutex<ReqBatcher<$struct_name>>>,
         }
 
         impl $struct_name {
-            pub fn new(uri: String, user: Option<String>, pass: Option<String>, max_concurrency: usize, rps: usize) -> Self {
+            pub fn new(uri: String, user: Option<String>, pass: Option<String>, max_concurrency: usize, rps: usize, max_batch_size: usize) -> Arc<Self> {
                 use BatchRequest;
-                $struct_name {
+                let mut parent_val = $struct_name {
                     uri,
                     user,
                     pass,
@@ -157,8 +190,11 @@ macro_rules! jsonrpc_client {
                     rps,
                     counter: (Mutex::new(0), Condvar::new()),
                     last_req: Mutex::new(std::time::Instant::now()),
-                    batcher: BatchRequest::new(),
-                }
+                    batcher: None,
+                };
+                let parent = Arc::new(parent_val);
+                parent_val.batcher = BatchRequest::new(parent.clone(), max_batch_size);
+                parent
             }
             $(
                 $(
@@ -305,7 +341,7 @@ macro_rules! jsonrpc_client {
                     *lock = *lock + 1;
                     drop(lock);
                 }
-                let mut batcher_lock = self.batcher.lock().unwrap();
+                let mut batcher_lock = self.batcher.inner().lock().unwrap();
                 if batcher_lock.reqs.len() == 0 {
                     return Ok(HashMap::new())
                 }
@@ -313,6 +349,8 @@ macro_rules! jsonrpc_client {
                 println!("send_batch {}", batcher_lock.reqs.len());
                 let mut res = builder.send()?;
                 batcher_lock.reqs = Vec::new();
+                let resps = batcher_lock.resps.clone();
+                batcher_lock.resps = HashMap::new();
                 drop(batcher_lock);
                 if self.max_concurrency > 0 {
                     let mut lock = self.counter.0.lock().unwrap();
@@ -327,12 +365,17 @@ macro_rules! jsonrpc_client {
                         bail!("{:?}", serde_json::from_str::<RpcResponse<T>>(&text)?.error)
                     }
                 };
-                json.into_iter().map(|reply| {
+                let res_res: Result<HashMap<req_id, T>, Error> = json.into_iter().map(|reply| {
                     Ok(match reply.result {
                         Some(b) => (reply.id.unwrap_or_else(req_id::new_v4), b),
                         _ => bail!("{:?}", reply.error),
                     })
-                }).collect()
+                }).collect();
+                let mut res = res_res?;
+                for (key, val) in resps {
+                    res.insert(key, serde_json::from_str(&serde_json::to_string(&val)?)?);
+                }
+                Ok(res)
             }
         }
     };
