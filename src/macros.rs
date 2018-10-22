@@ -19,6 +19,7 @@ macro_rules! jsonrpc_client {
         use failure::Error;
         use reqwest as rq;
         use serde::Deserialize;
+        use std::marker::PhantomData;
         use serde::Serialize;
         use std::sync::{Arc, Condvar, Mutex};
         use uuid::Uuid as req_id;
@@ -80,12 +81,10 @@ macro_rules! jsonrpc_client {
             reqs: Vec<RpcRequest<serde_json::Value>>,
             resps: HashMap<req_id, serde_json::Value>,
             max_batch_size: usize,
-            parent: Arc<T>,
+            phantom: PhantomData<T>,
         }
 
         pub trait BatchRequest<$struct_name> {
-            fn new(parent: Arc<$struct_name>, max_batch_size: usize) -> Self;
-
             fn inner(&self) -> &Mutex<ReqBatcher<$struct_name>>;
 
             $(
@@ -100,21 +99,9 @@ macro_rules! jsonrpc_client {
             )*
         }
 
-        impl BatchRequest<$struct_name> for Option<Mutex<ReqBatcher<$struct_name>>> {
-            fn new(parent: Arc<$struct_name>, max_batch_size: usize) -> Self {
-                Some(Mutex::new(ReqBatcher {
-                    reqs: Vec::new(),
-                    resps: HashMap::new(),
-                    max_batch_size,
-                    parent,
-                }))
-            }
-
+        impl<'a> BatchRequest<$struct_name> for (&'a $struct_name, &'a Mutex<ReqBatcher<$struct_name>>) {
             fn inner(&self) -> &Mutex<ReqBatcher<$struct_name>> {
-                match self {
-                    Some(a) => a,
-                    None => panic!("batcher not initialized!")
-                }
+                &self.1
             }
 
             $(
@@ -129,8 +116,8 @@ macro_rules! jsonrpc_client {
                         }.polymorphize();
                         let self_lock = self.inner().lock().unwrap();
                         if self_lock.reqs.len() >= self_lock.max_batch_size {
-                            let parent = self_lock.parent.clone();
                             drop(self_lock);
+                            let parent = self.0;
                             let batch_response: HashMap<req_id, serde_json::Value> = parent.send_batch()?;
                             let mut self_lock = self.inner().lock().unwrap();
                             self_lock.resps.extend(batch_response);
@@ -152,8 +139,8 @@ macro_rules! jsonrpc_client {
                         }.polymorphize();
                         let self_lock = self.inner().lock().unwrap();
                         if self_lock.reqs.len() >= self_lock.max_batch_size {
-                            let parent = self_lock.parent.clone();
                             drop(self_lock);
+                            let parent = self.0;
                             let batch_response: HashMap<req_id, serde_json::Value> = parent.send_batch()?;
                             let mut self_lock = self.inner().lock().unwrap();
                             self_lock.resps.extend(batch_response);
@@ -176,13 +163,12 @@ macro_rules! jsonrpc_client {
             rps: usize,
             counter: (Mutex<usize>, Condvar),
             last_req: Mutex<std::time::Instant>,
-            pub batcher: Option<Mutex<ReqBatcher<$struct_name>>>,
+            batcher: Mutex<ReqBatcher<$struct_name>>,
         }
 
         impl $struct_name {
             pub fn new(uri: String, user: Option<String>, pass: Option<String>, max_concurrency: usize, rps: usize, max_batch_size: usize) -> Arc<Self> {
-                use BatchRequest;
-                let mut parent_val = $struct_name {
+                Arc::new($struct_name {
                     uri,
                     user,
                     pass,
@@ -190,12 +176,19 @@ macro_rules! jsonrpc_client {
                     rps,
                     counter: (Mutex::new(0), Condvar::new()),
                     last_req: Mutex::new(std::time::Instant::now()),
-                    batcher: None,
-                };
-                let parent = Arc::new(parent_val);
-                parent_val.batcher = BatchRequest::new(parent.clone(), max_batch_size);
-                parent
+                    batcher: Mutex::new(ReqBatcher {
+                        reqs: Vec::new(),
+                        resps: HashMap::new(),
+                        max_batch_size,
+                        phantom: PhantomData,
+                    }),
+                })
             }
+
+            pub fn batcher<'a>(&'a self) -> (&'a Self, &'a Mutex<ReqBatcher<$struct_name>>) {
+                (self, &self.batcher)
+            }
+
             $(
                 $(
                     $(#[$attr_a])*
@@ -341,7 +334,7 @@ macro_rules! jsonrpc_client {
                     *lock = *lock + 1;
                     drop(lock);
                 }
-                let mut batcher_lock = self.batcher.inner().lock().unwrap();
+                let mut batcher_lock = self.batcher.lock().unwrap();
                 if batcher_lock.reqs.len() == 0 {
                     return Ok(HashMap::new())
                 }
