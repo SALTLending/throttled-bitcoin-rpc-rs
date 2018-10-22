@@ -306,6 +306,9 @@ macro_rules! jsonrpc_client {
                     drop(lock);
                 }
                 let mut batcher_lock = self.batcher.lock().unwrap();
+                if batcher_lock.reqs.len() == 0 {
+                    return Ok(HashMap::new())
+                }
                 builder = builder.json(&batcher_lock.reqs);
                 println!("send_batch {}", batcher_lock.reqs.len());
                 let mut res = builder.send()?;
