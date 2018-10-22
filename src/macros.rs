@@ -146,7 +146,6 @@ macro_rules! jsonrpc_client {
                             let mut self_lock = self.inner().lock().unwrap();
                             self_lock.resps.extend(batch_response);
                         }
-                        drop(self_lock);
                         let mut self_lock = self.inner().lock().unwrap();
                         self_lock.reqs.push(body);
                         Ok(id)
