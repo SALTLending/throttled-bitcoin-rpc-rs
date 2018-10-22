@@ -276,7 +276,6 @@ macro_rules! jsonrpc_client {
                 )*
             )*
             pub fn send_batch<T: for<'de> Deserialize<'de>>(&self) -> Result<HashMap<req_id, T>, Error> {
-                println!("send_batch");
                 let mut builder = rq::Client::new()
                     .post(&self.uri)
                     .header(rq::header::CONNECTION, rq::header::HeaderValue::from_static("close"));
@@ -308,6 +307,7 @@ macro_rules! jsonrpc_client {
                 }
                 let mut batcher_lock = self.batcher.lock().unwrap();
                 builder = builder.json(&batcher_lock.reqs);
+                println!("send_batch {}", batcher_lock.reqs.len());
                 let mut res = builder.send()?;
                 batcher_lock.reqs = Vec::new();
                 drop(batcher_lock);
