@@ -145,8 +145,8 @@ macro_rules! jsonrpc_client {
                             let batch_response: HashMap<req_id, serde_json::Value> = parent.send_batch()?;
                             let mut self_lock = self.inner().lock().unwrap();
                             self_lock.resps.extend(batch_response);
-                            drop(self_lock);
                         }
+                        drop(self_lock);
                         let mut self_lock = self.inner().lock().unwrap();
                         self_lock.reqs.push(body);
                         Ok(id)
