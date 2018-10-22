@@ -131,6 +131,7 @@ macro_rules! jsonrpc_client {
                 $(
                     $(#[$attr_b])*
                     fn $method_b(&self$(, $arg_name_b: $arg_ty_b)*) -> Result<req_id, Error> {
+                        println!("queue {}", stringify!($method_b));
                         let id = req_id::new_v4();
                         let body = RpcRequest {
                             method: stringify!($method_b).to_owned(),
