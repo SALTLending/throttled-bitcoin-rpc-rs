@@ -115,8 +115,9 @@ macro_rules! jsonrpc_client {
                             id,
                         }.polymorphize();
                         let self_lock = self.inner().lock().unwrap();
-                        if self_lock.reqs.len() >= self_lock.max_batch_size {
-                            drop(self_lock);
+                        let flush = self_lock.reqs.len() >= self_lock.max_batch_size;
+                        drop(self_lock);
+                        if flush {
                             let parent = self.0;
                             let batch_response: HashMap<req_id, serde_json::Value> = parent.send_batch()?;
                             let mut self_lock = self.inner().lock().unwrap();
@@ -138,13 +139,19 @@ macro_rules! jsonrpc_client {
                             params: ($($arg_name_b,)*),
                             id,
                         }.polymorphize();
+                        println!("{} locking", line!());
                         let self_lock = self.inner().lock().unwrap();
-                        if self_lock.reqs.len() >= self_lock.max_batch_size {
-                            drop(self_lock);
+                        println!("{} locked", line!());
+                        let flush = self_lock.reqs.len() >= self_lock.max_batch_size;
+                        drop(self_lock);
+                        if flush {
                             let parent = self.0;
                             let batch_response: HashMap<req_id, serde_json::Value> = parent.send_batch()?;
+                            println!("{} locking", line!());
                             let mut self_lock = self.inner().lock().unwrap();
+                            println!("{} locked", line!());
                             self_lock.resps.extend(batch_response);
+                            drop(self_lock);
                         }
                         let mut self_lock = self.inner().lock().unwrap();
                         self_lock.reqs.push(body);
