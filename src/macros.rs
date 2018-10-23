@@ -77,15 +77,16 @@ macro_rules! jsonrpc_client {
             )+
         }
 
-        pub struct ReqBatcher<T> {
+        pub struct ReqBatcher<T, U: for<'de> Deserialize<'de>>
+        where  {
             reqs: Vec<RpcRequest<serde_json::Value>>,
-            resps: HashMap<req_id, serde_json::Value>,
+            resps: HashMap<req_id, U>,
             max_batch_size: usize,
             phantom: PhantomData<T>,
         }
 
-        pub trait BatchRequest<$struct_name> {
-            fn inner(&mut self) -> &mut ReqBatcher<$struct_name>;
+        pub trait BatchRequest<$struct_name, T: for<'de> Deserialize<'de>> {
+            fn inner(&mut self) -> &mut ReqBatcher<$struct_name, T>;
             $(
                 $(
                     $(#[$attr_a])*
@@ -97,11 +98,12 @@ macro_rules! jsonrpc_client {
                 )*
             )*
             fn flush(&mut self) -> Result<(), Error>;
-            fn send<T: for<'de> Deserialize<'de>>(&mut self) -> Result<HashMap<req_id, T>, Error>;
+            fn send(&mut self) -> Result<HashMap<req_id, T>, Error>;
         }
 
-        impl<'a> BatchRequest<$struct_name> for (&'a $struct_name, ReqBatcher<$struct_name>) {
-            fn inner(&mut self) -> &mut ReqBatcher<$struct_name> {
+        impl<'a, T> BatchRequest<$struct_name, T> for (&'a $struct_name, ReqBatcher<$struct_name, T>)
+        where T: for<'de> Deserialize<'de> {
+            fn inner(&mut self) -> &mut ReqBatcher<$struct_name, T> {
                 &mut self.1
             }
 
@@ -195,13 +197,13 @@ macro_rules! jsonrpc_client {
                     self.0.counter.1.notify_one();
                 }
                 let text = res.text()?;
-                let json = match serde_json::from_str::<Vec<RpcResponse<serde_json::Value>>>(&text) {
+                let json = match serde_json::from_str::<Vec<RpcResponse<T>>>(&text) {
                     Ok(a) => a,
                     Err(_) => {
                         bail!("{:?}", serde_json::from_str::<RpcResponse<serde_json::Value>>(&text)?.error)
                     }
                 };
-                let res_res: Result<HashMap<req_id, serde_json::Value>, Error> = json.into_iter().map(|reply| {
+                let res_res: Result<HashMap<req_id, T>, Error> = json.into_iter().map(|reply| {
                     Ok(match reply.result {
                         Some(b) => (reply.id.unwrap_or_else(req_id::new_v4), b),
                         _ => bail!("{:?}", reply.error),
@@ -213,13 +215,10 @@ macro_rules! jsonrpc_client {
                 Ok(())
             }
 
-            fn send<T: for<'de> Deserialize<'de>>(&mut self) -> Result<HashMap<req_id, T>, Error> {
+            fn send(&mut self) -> Result<HashMap<req_id, T>, Error> {
                 self.flush()?;
-                let res: Result<HashMap<req_id, T>, Error> = self.inner().resps.clone().into_iter().map(|(key, val)| Ok((key, serde_json::from_str(&serde_json::to_string(&val)?)?))).collect();
-                if res.is_ok() {
-                    self.inner().resps = HashMap::new();
-                }
-                res
+                let res: HashMap<req_id, T> = std::mem::replace(&mut self.inner().resps, HashMap::new());
+                Ok(res)
             }
         }
 
@@ -249,7 +248,7 @@ macro_rules! jsonrpc_client {
                 })
             }
 
-            pub fn batcher<'a>(&'a self) -> (&'a Self, ReqBatcher<$struct_name>) {
+            pub fn batcher<'a, T: for<'de> Deserialize<'de>>(&'a self) -> (&'a Self, ReqBatcher<$struct_name, T>) {
                 (self, ReqBatcher {
                     reqs: Vec::new(),
                     resps: HashMap::new(),
