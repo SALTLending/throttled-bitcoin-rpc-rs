@@ -344,6 +344,7 @@ macro_rules! jsonrpc_client {
                 }
                 builder = builder.json(&batcher_lock.reqs);
                 let mut res = builder.send()?;
+                println!("{} batched", batcher_lock.reqs.len());
                 let text = res.text()?;
                 let json = match serde_json::from_str::<Vec<RpcResponse<serde_json::Value>>>(&text) {
                     Ok(a) => a,
