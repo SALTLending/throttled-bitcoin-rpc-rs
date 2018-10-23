@@ -115,14 +115,19 @@ macro_rules! jsonrpc_client {
                             id,
                         }.polymorphize();
                         let self_lock = self.inner().lock().unwrap();
+                        println!("enqueue, {}", line!());
                         let flush = self_lock.reqs.len() >= self_lock.max_batch_size;
                         drop(self_lock);
+                        println!("dequeue, {}", line!());
                         if flush {
                             let parent = self.0;
                             parent.send_batch_int()?;
                         }
+                        println!("enqueue, {}", line!());
                         let mut self_lock = self.inner().lock().unwrap();
                         self_lock.reqs.push(body);
+                        drop(self_lock);
+                        println!("dequeue, {}", line!());
                         Ok(id)
                     }
                 )*
@@ -136,14 +141,19 @@ macro_rules! jsonrpc_client {
                             id,
                         }.polymorphize();
                         let self_lock = self.inner().lock().unwrap();
+                        println!("enqueue, {}", line!());
                         let flush = self_lock.reqs.len() >= self_lock.max_batch_size;
                         drop(self_lock);
+                        println!("dequeue, {}", line!());
                         if flush {
                             let parent = self.0;
                             parent.send_batch_int()?;
                         }
+                        println!("enqueue, {}", line!());
                         let mut self_lock = self.inner().lock().unwrap();
                         self_lock.reqs.push(body);
+                        drop(self_lock);
+                        println!("dequeue, {}", line!());
                         Ok(id)
                     }
                 )*
