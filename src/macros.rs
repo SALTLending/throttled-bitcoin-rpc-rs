@@ -114,20 +114,16 @@ macro_rules! jsonrpc_client {
                             params: ($($arg_name_a,)*),
                             id,
                         }.polymorphize();
-                        println!("lock batcher");
                         let self_lock = self.inner().lock().unwrap();
                         let flush = self_lock.reqs.len() >= self_lock.max_batch_size;
                         drop(self_lock);
-                        println!("unlock batcher");
                         if flush {
                             let parent = self.0;
                             parent.send_batch_int()?;
                         }
-                        println!("lock batcher");
                         let mut self_lock = self.inner().lock().unwrap();
                         self_lock.reqs.push(body);
                         drop(self_lock);
-                        println!("unlock batcher");
                         Ok(id)
                     }
                 )*
@@ -140,20 +136,16 @@ macro_rules! jsonrpc_client {
                             params: ($($arg_name_b,)*),
                             id,
                         }.polymorphize();
-                        println!("lock batcher");
                         let self_lock = self.inner().lock().unwrap();
                         let flush = self_lock.reqs.len() >= self_lock.max_batch_size;
                         drop(self_lock);
-                        println!("unlock batcher");
                         if flush {
                             let parent = self.0;
                             parent.send_batch_int()?;
                         }
-                        println!("lock batcher");
                         let mut self_lock = self.inner().lock().unwrap();
                         self_lock.reqs.push(body);
                         drop(self_lock);
-                        println!("unlock batcher");
                         Ok(id)
                     }
                 )*
@@ -214,7 +206,6 @@ macro_rules! jsonrpc_client {
                         });
                         if self.rps > 0 {
                             let wait = std::time::Duration::from_secs(1) / self.rps as u32;
-                            println!("lock last_req");
                             let mut lock = self.last_req.lock().unwrap();
                             let elapsed = lock.elapsed();
                             if elapsed < wait {
@@ -222,10 +213,8 @@ macro_rules! jsonrpc_client {
                             }
                             *lock = std::time::Instant::now();
                             drop(lock);
-                            println!("unlock last_req");
                         }
                         if self.max_concurrency > 0 {
-                            println!("lock counter");
                             let mut lock = self.counter.0.lock().unwrap();
                             while *lock == self.max_concurrency {
                                 lock = self.counter.1.wait(lock).unwrap();
@@ -235,17 +224,14 @@ macro_rules! jsonrpc_client {
                             }
                             *lock = *lock + 1;
                             drop(lock);
-                            println!("unlock counter");
                         }
                         println!("{} sent", stringify!($method_a));
                         let mut res = builder.send()?;
                         println!("{} received", stringify!($method_a));
                         if self.max_concurrency > 0 {
-                            println!("lock counter");
                             let mut lock = self.counter.0.lock().unwrap();
                             *lock = *lock - 1;
                             drop(lock);
-                            println!("unlock counter");
                             self.counter.1.notify_one();
                         }
                         let txt = res.text()?;
@@ -275,7 +261,6 @@ macro_rules! jsonrpc_client {
                         });
                         if self.rps > 0 {
                             let wait = std::time::Duration::from_secs(1) / self.rps as u32;
-                            println!("lock last_req");
                             let mut lock = self.last_req.lock().unwrap();
                             let elapsed = lock.elapsed();
                             if elapsed < wait {
@@ -283,10 +268,8 @@ macro_rules! jsonrpc_client {
                             }
                             *lock = std::time::Instant::now();
                             drop(lock);
-                            println!("unlock last_req");
                         }
                         if self.max_concurrency > 0 {
-                            println!("lock counter");
                             let mut lock = self.counter.0.lock().unwrap();
                             while *lock == self.max_concurrency {
                                 lock = self.counter.1.wait(lock).unwrap();
@@ -296,17 +279,14 @@ macro_rules! jsonrpc_client {
                             }
                             *lock = *lock + 1;
                             drop(lock);
-                            println!("unlock counter");
                         }
                         println!("{} sent", stringify!($method_b));
                         let mut res = builder.send()?;
                         println!("{} received", stringify!($method_b));
                         if self.max_concurrency > 0 {
-                            println!("lock counter");
                             let mut lock = self.counter.0.lock().unwrap();
                             *lock = *lock - 1;
                             drop(lock);
-                            println!("unlock counter");
                             self.counter.1.notify_one();
                         }
                         let txt = res.text()?;
@@ -338,7 +318,6 @@ macro_rules! jsonrpc_client {
                 };
                 if self.rps > 0 {
                     let wait = std::time::Duration::from_secs(1) / self.rps as u32;
-                    println!("lock last_req");
                     let mut lock = self.last_req.lock().unwrap();
                     let elapsed = lock.elapsed();
                     if elapsed < wait {
@@ -346,10 +325,8 @@ macro_rules! jsonrpc_client {
                     }
                     *lock = std::time::Instant::now();
                     drop(lock);
-                    println!("unlock last_req");
                 }
                 if self.max_concurrency > 0 {
-                    println!("lock counter");
                     let mut lock = self.counter.0.lock().unwrap();
                     while *lock == self.max_concurrency {
                         lock = self.counter.1.wait(lock).unwrap();
@@ -359,17 +336,13 @@ macro_rules! jsonrpc_client {
                     }
                     *lock = *lock + 1;
                     drop(lock);
-                    println!("unlock counter");
                 }
-                println!("lock batcher");
                 let mut batcher_lock = self.batcher.lock().unwrap();
                 if batcher_lock.reqs.len() == 0 {
                     if self.max_concurrency > 0 {
-                        println!("lock counter");
                         let mut lock = self.counter.0.lock().unwrap();
                         *lock = *lock - 1;
                         drop(lock);
-                        println!("unlock counter");
                         self.counter.1.notify_one();
                     }
                     return Ok(())
@@ -395,13 +368,10 @@ macro_rules! jsonrpc_client {
                 batcher_lock.reqs = Vec::new();
                 batcher_lock.resps.extend(res);
                 drop(batcher_lock);
-                println!("unlock batcher");
                 if self.max_concurrency > 0 {
-                    println!("lock counter");
                     let mut lock = self.counter.0.lock().unwrap();
                     *lock = *lock - 1;
                     drop(lock);
-                    println!("unlock counter");
                     self.counter.1.notify_one();
                 }
                 Ok(())
@@ -409,14 +379,12 @@ macro_rules! jsonrpc_client {
 
             pub fn send_batch<T: for<'de> Deserialize<'de>>(&self) -> Result<HashMap<req_id, T>, Error> {
                 self.send_batch_int()?;
-                println!("lock batcher");
                 let mut batcher_lock = self.batcher.lock().unwrap();
                 let res: Result<HashMap<req_id, T>, Error> = batcher_lock.resps.clone().into_iter().map(|(key, val)| Ok((key, serde_json::from_str(&serde_json::to_string(&val)?)?))).collect();
                 if res.is_ok() {
                     batcher_lock.resps = HashMap::new();
                 }
                 drop(batcher_lock);
-                println!("unlock batcher");
                 res
             }
         }
