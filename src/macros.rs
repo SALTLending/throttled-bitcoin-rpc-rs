@@ -275,6 +275,27 @@ macro_rules! jsonrpc_client {
                             params: ($($arg_name_a,)*),
                             id: req_id::new_v4(),
                         });
+                        if self.rps > 0 {
+                            let wait = std::time::Duration::from_secs(1) / self.rps as u32;
+                            let mut lock = self.last_req.lock().unwrap();
+                            let elapsed = lock.elapsed();
+                            if elapsed < wait {
+                                std::thread::sleep(wait - elapsed);
+                            }
+                            *lock = std::time::Instant::now();
+                            drop(lock);
+                        }
+                        if self.max_concurrency > 0 {
+                            let mut lock = self.counter.0.lock().unwrap();
+                            while *lock == self.max_concurrency {
+                                lock = self.counter.1.wait(lock).unwrap();
+                            }
+                            if *lock > self.max_concurrency {
+                                unreachable!();
+                            }
+                            *lock = *lock + 1;
+                            drop(lock);
+                        }
                         #[cfg(feature = "logging")] println!(stringify!($method_a));
                         let mut res = match builder.send() {
                             Ok(a) => a,
