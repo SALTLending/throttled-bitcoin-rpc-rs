@@ -189,7 +189,6 @@ macro_rules! jsonrpc_client {
                 $(
                     $(#[$attr_a])*
                     pub fn $method_a(&self$(, $arg_name_a: $arg_ty_a)*) -> Result<$return_ty_a, Error> {
-                        println!(stringify!($method_a));
                         let mut builder = rq::Client::new()
                             .post(&self.uri)
                             .header(rq::header::CONNECTION, rq::header::HeaderValue::from_static("close"));
@@ -224,7 +223,9 @@ macro_rules! jsonrpc_client {
                             *lock = *lock + 1;
                             drop(lock);
                         }
+                        println!("{} sent", stringify!($method_a));
                         let mut res = builder.send()?;
+                        println!("{} received", stringify!($method_a));
                         if self.max_concurrency > 0 {
                             let mut lock = self.counter.0.lock().unwrap();
                             *lock = *lock - 1;
@@ -277,7 +278,9 @@ macro_rules! jsonrpc_client {
                             *lock = *lock + 1;
                             drop(lock);
                         }
+                        println!("{} sent", stringify!($method_b));
                         let mut res = builder.send()?;
+                        println!("{} received", stringify!($method_b));
                         if self.max_concurrency > 0 {
                             let mut lock = self.counter.0.lock().unwrap();
                             *lock = *lock - 1;
@@ -302,7 +305,7 @@ macro_rules! jsonrpc_client {
                 )*
             )*
             fn send_batch_int(&self) -> Result<(), Error> {
-                println!("send_batch attempt");
+                //println!("send_batch attempt");
                 let mut builder = rq::Client::new()
                     .post(&self.uri)
                     .header(rq::header::CONNECTION, rq::header::HeaderValue::from_static("close"));
@@ -337,8 +340,9 @@ macro_rules! jsonrpc_client {
                     return Ok(())
                 }
                 builder = builder.json(&batcher_lock.reqs);
-                println!("send_batch {}", batcher_lock.reqs.len());
+                println!("send_batch {} sent", batcher_lock.reqs.len());
                 let mut res = builder.send()?;
+                println!("send_batch {} recieved", batcher_lock.reqs.len());
                 let text = res.text()?;
                 let json = match serde_json::from_str::<Vec<RpcResponse<serde_json::Value>>>(&text) {
                     Ok(a) => a,
