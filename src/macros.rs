@@ -375,6 +375,7 @@ macro_rules! jsonrpc_client {
                 self.send_batch_int()?;
                 let mut batcher_lock = self.batcher.lock().unwrap();
                 let res: Result<HashMap<req_id, T>, Error> = batcher_lock.resps.clone().into_iter().map(|(key, val)| Ok((key, serde_json::from_str(&serde_json::to_string(&val)?)?))).collect();
+                println!("{} deserialized", batcher_lock.resps.len());
                 if res.is_ok() {
                     batcher_lock.resps = HashMap::new();
                 }
