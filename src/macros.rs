@@ -119,10 +119,7 @@ macro_rules! jsonrpc_client {
                         drop(self_lock);
                         if flush {
                             let parent = self.0;
-                            let batch_response: HashMap<req_id, serde_json::Value> = parent.send_batch()?;
-                            let mut self_lock = self.inner().lock().unwrap();
-                            self_lock.resps.extend(batch_response);
-                            drop(self_lock);
+                            parent.send_batch_int()?;
                         }
                         let mut self_lock = self.inner().lock().unwrap();
                         self_lock.reqs.push(body);
@@ -143,10 +140,7 @@ macro_rules! jsonrpc_client {
                         drop(self_lock);
                         if flush {
                             let parent = self.0;
-                            let batch_response: HashMap<req_id, serde_json::Value> = parent.send_batch()?;
-                            let mut self_lock = self.inner().lock().unwrap();
-                            self_lock.resps.extend(batch_response);
-                            drop(self_lock);
+                            parent.send_batch_int()?;
                         }
                         let mut self_lock = self.inner().lock().unwrap();
                         self_lock.reqs.push(body);
@@ -307,7 +301,7 @@ macro_rules! jsonrpc_client {
                     }
                 )*
             )*
-            pub fn send_batch<T: for<'de> Deserialize<'de>>(&self) -> Result<HashMap<req_id, T>, Error> {
+            fn send_batch_int(&self) -> Result<(), Error> {
                 println!("send_batch attempt");
                 let mut builder = rq::Client::new()
                     .post(&self.uri)
@@ -340,14 +334,27 @@ macro_rules! jsonrpc_client {
                 }
                 let mut batcher_lock = self.batcher.lock().unwrap();
                 if batcher_lock.reqs.len() == 0 {
-                    return Ok(HashMap::new())
+                    return Ok(())
                 }
                 builder = builder.json(&batcher_lock.reqs);
                 println!("send_batch {}", batcher_lock.reqs.len());
                 let mut res = builder.send()?;
+                let text = res.text()?;
+                let json = match serde_json::from_str::<Vec<RpcResponse<serde_json::Value>>>(&text) {
+                    Ok(a) => a,
+                    Err(_) => {
+                        bail!("{:?}", serde_json::from_str::<RpcResponse<serde_json::Value>>(&text)?.error)
+                    }
+                };
+                let res_res: Result<HashMap<req_id, serde_json::Value>, Error> = json.into_iter().map(|reply| {
+                    Ok(match reply.result {
+                        Some(b) => (reply.id.unwrap_or_else(req_id::new_v4), b),
+                        _ => bail!("{:?}", reply.error),
+                    })
+                }).collect();
+                let res = res_res?;
                 batcher_lock.reqs = Vec::new();
-                let resps = batcher_lock.resps.clone();
-                batcher_lock.resps = HashMap::new();
+                batcher_lock.resps.extend(res);
                 drop(batcher_lock);
                 if self.max_concurrency > 0 {
                     let mut lock = self.counter.0.lock().unwrap();
@@ -355,24 +362,17 @@ macro_rules! jsonrpc_client {
                     self.counter.1.notify_one();
                     drop(lock);
                 }
-                let text = res.text()?;
-                let json = match serde_json::from_str::<Vec<RpcResponse<T>>>(&text) {
-                    Ok(a) => a,
-                    Err(_) => {
-                        bail!("{:?}", serde_json::from_str::<RpcResponse<T>>(&text)?.error)
-                    }
-                };
-                let res_res: Result<HashMap<req_id, T>, Error> = json.into_iter().map(|reply| {
-                    Ok(match reply.result {
-                        Some(b) => (reply.id.unwrap_or_else(req_id::new_v4), b),
-                        _ => bail!("{:?}", reply.error),
-                    })
-                }).collect();
-                let mut res = res_res?;
-                for (key, val) in resps {
-                    res.insert(key, serde_json::from_str(&serde_json::to_string(&val)?)?);
+                Ok(())
+            }
+
+            pub fn send_batch<T: for<'de> Deserialize<'de>>(&self) -> Result<HashMap<req_id, T>, Error> {
+                self.send_batch_int()?;
+                let mut batcher_lock = self.batcher.lock().unwrap();
+                let res: Result<HashMap<req_id, T>, Error> = batcher_lock.resps.clone().into_iter().map(|(key, val)| Ok((key, serde_json::from_str(&serde_json::to_string(&val)?)?))).collect();
+                if res.is_ok() {
+                    batcher_lock.resps = HashMap::new();
                 }
-                Ok(res)
+                res
             }
         }
     };
