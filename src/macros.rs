@@ -153,6 +153,7 @@ macro_rules! jsonrpc_client {
                     (Some(ref u), None) => builder = builder.basic_auth::<&str, &str>(u, None),
                     _ => (),
                 };
+                builder = builder.json(&self.inner().reqs);
                 if self.0.rps > 0 {
                     let wait = std::time::Duration::from_secs(1) / self.0.rps as u32;
                     let mut lock = self.0.last_req.lock().unwrap();
@@ -174,9 +175,25 @@ macro_rules! jsonrpc_client {
                     *lock = *lock + 1;
                     drop(lock);
                 }
-                builder = builder.json(&self.inner().reqs);
                 #[cfg(feature = "logging")] println!("batch {}", self.inner().reqs.len());
-                let mut res = builder.send()?;
+                let mut res = match builder.send() {
+                    Ok(a) => a,
+                    Err(e) => {
+                        if self.0.max_concurrency > 0 {
+                            let mut lock = self.0.counter.0.lock().unwrap();
+                            *lock = *lock - 1;
+                            drop(lock);
+                            self.0.counter.1.notify_one();
+                        }
+                        Err(e)?
+                    }
+                };
+                if self.0.max_concurrency > 0 {
+                    let mut lock = self.0.counter.0.lock().unwrap();
+                    *lock = *lock - 1;
+                    drop(lock);
+                    self.0.counter.1.notify_one();
+                }
                 let text = res.text()?;
                 let json = match serde_json::from_str::<Vec<RpcResponse<serde_json::Value>>>(&text) {
                     Ok(a) => a,
@@ -193,12 +210,6 @@ macro_rules! jsonrpc_client {
                 let res = res_res?;
                 self.inner().reqs = Vec::new();
                 self.inner().resps.extend(res);
-                if self.0.max_concurrency > 0 {
-                    let mut lock = self.0.counter.0.lock().unwrap();
-                    *lock = *lock - 1;
-                    drop(lock);
-                    self.0.counter.1.notify_one();
-                }
                 Ok(())
             }
 
@@ -264,29 +275,19 @@ macro_rules! jsonrpc_client {
                             params: ($($arg_name_a,)*),
                             id: req_id::new_v4(),
                         });
-                        if self.rps > 0 {
-                            let wait = std::time::Duration::from_secs(1) / self.rps as u32;
-                            let mut lock = self.last_req.lock().unwrap();
-                            let elapsed = lock.elapsed();
-                            if elapsed < wait {
-                                std::thread::sleep(wait - elapsed);
-                            }
-                            *lock = std::time::Instant::now();
-                            drop(lock);
-                        }
-                        if self.max_concurrency > 0 {
-                            let mut lock = self.counter.0.lock().unwrap();
-                            while *lock == self.max_concurrency {
-                                lock = self.counter.1.wait(lock).unwrap();
-                            }
-                            if *lock > self.max_concurrency {
-                                unreachable!();
-                            }
-                            *lock = *lock + 1;
-                            drop(lock);
-                        }
                         #[cfg(feature = "logging")] println!(stringify!($method_a));
-                        let mut res = builder.send()?;
+                        let mut res = match builder.send() {
+                            Ok(a) => a,
+                            Err(e) => {
+                                if self.max_concurrency > 0 {
+                                    let mut lock = self.counter.0.lock().unwrap();
+                                    *lock = *lock - 1;
+                                    drop(lock);
+                                    self.counter.1.notify_one();
+                                }
+                                Err(e)?
+                            }
+                        };
                         if self.max_concurrency > 0 {
                             let mut lock = self.counter.0.lock().unwrap();
                             *lock = *lock - 1;
@@ -339,7 +340,18 @@ macro_rules! jsonrpc_client {
                             drop(lock);
                         }
                         #[cfg(feature = "logging")] println!(stringify!($method_b));
-                        let mut res = builder.send()?;
+                        let mut res = match builder.send() {
+                            Ok(a) => a,
+                            Err(e) => {
+                                if self.max_concurrency > 0 {
+                                    let mut lock = self.counter.0.lock().unwrap();
+                                    *lock = *lock - 1;
+                                    drop(lock);
+                                    self.counter.1.notify_one();
+                                }
+                                Err(e)?
+                            }
+                        };
                         if self.max_concurrency > 0 {
                             let mut lock = self.counter.0.lock().unwrap();
                             *lock = *lock - 1;
