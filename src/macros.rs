@@ -175,6 +175,7 @@ macro_rules! jsonrpc_client {
                     drop(lock);
                 }
                 builder = builder.json(&self.inner().reqs);
+                #[cfg(feature = "logging")] println!("batch {}", self.inner().reqs.len());
                 let mut res = builder.send()?;
                 let text = res.text()?;
                 let json = match serde_json::from_str::<Vec<RpcResponse<serde_json::Value>>>(&text) {
@@ -284,6 +285,7 @@ macro_rules! jsonrpc_client {
                             *lock = *lock + 1;
                             drop(lock);
                         }
+                        #[cfg(feature = "logging")] println!(stringify!($method_a));
                         let mut res = builder.send()?;
                         if self.max_concurrency > 0 {
                             let mut lock = self.counter.0.lock().unwrap();
@@ -336,6 +338,7 @@ macro_rules! jsonrpc_client {
                             *lock = *lock + 1;
                             drop(lock);
                         }
+                        #[cfg(feature = "logging")] println!(stringify!($method_b));
                         let mut res = builder.send()?;
                         if self.max_concurrency > 0 {
                             let mut lock = self.counter.0.lock().unwrap();
