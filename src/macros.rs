@@ -364,6 +364,14 @@ macro_rules! jsonrpc_client {
                 println!("lock batcher");
                 let mut batcher_lock = self.batcher.lock().unwrap();
                 if batcher_lock.reqs.len() == 0 {
+                    if self.max_concurrency > 0 {
+                        println!("lock counter");
+                        let mut lock = self.counter.0.lock().unwrap();
+                        *lock = *lock - 1;
+                        drop(lock);
+                        println!("unlock counter");
+                        self.counter.1.notify_one();
+                    }
                     return Ok(())
                 }
                 builder = builder.json(&batcher_lock.reqs);
