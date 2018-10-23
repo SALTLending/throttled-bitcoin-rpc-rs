@@ -229,8 +229,8 @@ macro_rules! jsonrpc_client {
                         if self.max_concurrency > 0 {
                             let mut lock = self.counter.0.lock().unwrap();
                             *lock = *lock - 1;
-                            self.counter.1.notify_one();
                             drop(lock);
+                            self.counter.1.notify_one();
                         }
                         let txt = res.text()?;
                         let body: RpcResponse<$return_ty_a> = serde_json::from_str(&txt)?;
@@ -284,8 +284,8 @@ macro_rules! jsonrpc_client {
                         if self.max_concurrency > 0 {
                             let mut lock = self.counter.0.lock().unwrap();
                             *lock = *lock - 1;
-                            self.counter.1.notify_one();
                             drop(lock);
+                            self.counter.1.notify_one();
                         }
                         let txt = res.text()?;
                         let body: reply::$method_b = (|txt: String| {
@@ -363,8 +363,8 @@ macro_rules! jsonrpc_client {
                 if self.max_concurrency > 0 {
                     let mut lock = self.counter.0.lock().unwrap();
                     *lock = *lock - 1;
-                    self.counter.1.notify_one();
                     drop(lock);
+                    self.counter.1.notify_one();
                 }
                 Ok(())
             }
