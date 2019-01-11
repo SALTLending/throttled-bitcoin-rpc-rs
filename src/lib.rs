@@ -66,7 +66,7 @@ pub struct Transaction {
     pub vout: Vec<Vout>,
     pub hex: String,
     pub blockhash: Option<String>,
-    pub confirmations: Option<serde_json::Number>,
+    pub confirmations: serde_json::Number,
     pub time: Option<serde_json::Number>,
     pub blocktime: Option<serde_json::Number>,
 }
@@ -81,7 +81,7 @@ pub struct Transaction {
     pub vout: Vec<Vout>,
     pub hex: String,
     pub blockhash: Option<String>,
-    pub confirmations: Option<serde_json::Number>,
+    pub confirmations: serde_json::Number,
     pub time: Option<serde_json::Number>,
     pub blocktime: Option<serde_json::Number>,
 }
