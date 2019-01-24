@@ -12,7 +12,7 @@ Works with LTC and DOGE using relevant compiler flags.
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-throttled-bitcoin-rpc = { git = "https://github.com/DR-BoneZ/throttled-bitcoin-rpc-rs" }
+throttled_bitcoin_rpc = "0.1.0"
 ```
 
 And this to your crate root:
