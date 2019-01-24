@@ -1,55 +1,58 @@
-<p align="center">
-  <a href="https://travis-ci.org/jeandudey/bitcoin-rpc">
-    <img src="https://travis-ci.org/jeandudey/bitcoin-rpc.svg?branch=master" alt="Build Status">
-    </img>
-  </a>
+# Throttled Bitcoin RPC Client
+This crate started as a fork of JeanDudey's Bitcoin RPC client, but has since been almost entirely rewritten.
 
-  <a href="https://crates.io/crates/bitcoin-rpc">
-    <img src="https://img.shields.io/crates/v/bitcoin-rpc.svg?maxAge=2592000" alt="Crates.io Version">
-    </img>
-  </a>
+This crate implements an Bitcoin RPC client in Rust, it does not intend to be a complete implementation of all the bitcoin rpc methods so if you need some method you can create a pull request for it.
 
-  <br/>
 
-   <strong>
-     <a href="https://jeandudey.github.io/bitcoin-rpc">
-       Documentation
-     </a>
-   </strong>
-</p>
-
-# Bitcoin RPC
-This crate implements an Bitcoin RPC client in rust, this cate doesn't intends to be a complete implementation of all the bitcoin rpc methods so if you need some method you can create a pull request for it.
 
 ## AltCoins
-I don't have tested it for other cryptocurrencies, only bitcoin was tested.
+Works with LTC and DOGE using relevant compiler flags.
 
 ## Usage
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-bitcoin-rpc = "0.1.2"
+throttled-bitcoin-rpc = { git = "https://github.com/DR-BoneZ/throttled-bitcoin-rpc-rs" }
 ```
 
 And this to your crate root:
 ```rust
-extern crate bitcoin_rpc;
+extern crate throttled_bitcoin_rpc;
 ```
 
 ### Example: Connecting to bitcoin rpc server
 ```rust
-extern crate bitcoinrpc;
+extern crate throttled_bitcoin_rpc;
 
-use bitcoinrpc::BitcoinRpc;
+use throttled_bitcoin_rpc::BitcoinRpcClient;
 
 fn main() {
-    let client = BitcoinRpc::new("example.org:8331", None, None);
+    let client = BitcoinRpcClient::new(
+        "example.org:8331",
+        Some("bitcoin".to_owned()),
+        Some("local321".to_owned()),
+        3, // max number of concurrent requests
+        10, // max number of requests per second
+        1000, // max size of batched requests
+    );
 
-    let block_count = match client.getblockcount() {
-        Ok(b) => b,
-        Err(e) => panic!("error: {}", e);
-    }
+    let block_count = match client.getblockcount().unwrap();
 
     println!("Block count: {}", block_count);
+    
+    let txs = vec![
+        "02617e68e8c3e3fa8763502c0e701bf5af1e8f57835b9bef1ee333b0fcf2527",
+        "969947e164bbfca77cb09eab343b192cb5605bfa0483b4d2a3ec626e55ad70bc",
+        "743f6202f89acc41adce4496244f152833ffb9f1f7a6d6e6fc94d85580ac9461",
+    ];
+    
+    use throttled_bitcoin_rpc::BatchRequest;
+    let mut batcher = client::batcher::<String>();
+    
+    for txid in txs {
+        batcher.getrawtransaction(txid.to_owned(), false).unwrap();
+    }
+    
+    println!("Raw TxData: {:?}", batcher.send().unwrap());
 }
 ```
