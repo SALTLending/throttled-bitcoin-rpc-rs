@@ -20,4 +20,5 @@ uuid = { version = "0.7", features = ["serde", "v4"] }
 [features]
 ltc = []
 doge = []
+dash = []
 logging = []

@@ -1,11 +1,14 @@
-#[macro_use] extern crate failure;
+#[macro_use]
+extern crate failure;
 extern crate reqwest;
 extern crate serde;
-#[macro_use] extern crate serde_derive;
+#[macro_use]
+extern crate serde_derive;
 extern crate serde_json;
 extern crate uuid;
 
-#[macro_use] mod macros;
+#[macro_use]
+mod macros;
 
 use std::collections::HashMap;
 
@@ -53,7 +56,7 @@ pub struct FullBlock {
     pub nextblockhash: Option<String>,
 }
 
-#[cfg(not(feature = "doge"))]
+#[cfg(not(any(feature = "doge", feature = "dash")))]
 #[derive(Deserialize, Clone, Debug)]
 pub struct Transaction {
     pub txid: String,
@@ -69,6 +72,25 @@ pub struct Transaction {
     pub confirmations: Option<serde_json::Number>,
     pub time: Option<serde_json::Number>,
     pub blocktime: Option<serde_json::Number>,
+}
+
+#[cfg(feature = "dash")]
+#[derive(Deserialize, Clone, Debug)]
+pub struct Transaction {
+    pub txid: String,
+    pub version: serde_json::Number,
+    pub locktime: serde_json::Number,
+    pub vin: Vec<Vin>,
+    pub vout: Vec<Vout>,
+    pub hex: String,
+    pub blockhash: Option<String>,
+    pub confirmations: Option<serde_json::Number>,
+    pub time: Option<serde_json::Number>,
+    pub blocktime: Option<serde_json::Number>,
+    pub height: Option<serde_json::Number>,
+    #[serde(default)]
+    pub instantlock: bool,
+    pub size: serde_json::Number,
 }
 
 #[cfg(feature = "doge")]
@@ -247,7 +269,7 @@ pub struct MemPoolTx {
     pub ancestorsize: serde_json::Number,
     pub ancestorfees: serde_json::Number,
     pub wtxid: String,
-    pub depends: Vec<String>
+    pub depends: Vec<String>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -261,12 +283,12 @@ pub enum RawMemPool {
 pub struct TxInput {
     pub txid: String,
     pub vout: serde_json::Number,
-    #[serde(rename="Sequence")]
+    #[serde(rename = "Sequence")]
     pub sequence: Option<serde_json::Number>,
 }
 
 #[derive(Serialize, Clone, Debug)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct TxOutput {
     pub txid: String,
     pub vout: serde_json::Number,
@@ -301,4 +323,3 @@ jsonrpc_client!(pub struct BitcoinRpcClient {
         #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getrawtransaction(&self, txid: String, verbose: bool) -> Result<False(SerializedData)|True(Transaction)>;
         #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getrawtransaction(&self, txid: String, verbose: isize) -> Result<Zero(SerializedData)|One(Transaction)>;
 });
-
