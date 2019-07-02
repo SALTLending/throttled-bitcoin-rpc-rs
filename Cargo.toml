@@ -1,6 +1,6 @@
 [package]
 name = "throttled_bitcoin_rpc"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Aiden McClelland <aiden.k.mcclelland@gmail.com>"]
 repository = "https://github.com/DR-BoneZ/throttled-bitcoin-rpc-rs"
 homepage = "https://github.com/DR-BoneZ/throttled-bitcoin-rpc-rs"
