@@ -1,0 +1,51 @@
+version: '3.4'
+
+services:
+  
+  app:
+    build:
+      context:  .
+      dockerfile: rpc-bch.Dockerfile
+    stdin_open: true
+    tty: true
+    links:
+      - node
+    volumes:
+      - ./src:/app/src/rs/src
+      - ./tests:/app/src/rs/tests
+      - ./cargo.toml:/app/src/rs/cargo.toml
+      - ./README.md:/app/src/rs/README.md
+
+      # [Optional] If you git clone using SSH keys, mounting them lets you reuse them.
+      - ~/.ssh:/root/.ssh
+
+    # [Optional] Required for ptrace-based debuggers like C++, Go, and Rust
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+    env_file:
+      - compose-bch-integration.env
+
+    # Overrides default command so things don't shut down after the process ends.
+    command: >
+      bash -c "\
+        wait-for-it node:18332 --;
+        cd /app/src/rs;
+        touch src/lib.rs;
+        cargo watch -x 'check --features \"bch integration\"' -x 'test --features \"bch integration\"';        
+        sleep infinity"
+
+  node:
+    image: slashrsm/bitcoin-cash-regtest:latest  
+    env_file:
+      - compose-bch-integration.env
+        
+    expose:
+      - "18332"
+      - "18443"
+      - "18444"
+    ports:
+      - "18332:18332"
+      - "18443:18443"
+      - "18444:18444"

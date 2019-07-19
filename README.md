@@ -56,3 +56,5 @@ fn main() {
     println!("Raw TxData: {:?}", batcher.send().unwrap());
 }
 ```
+
+### Integration Testing
