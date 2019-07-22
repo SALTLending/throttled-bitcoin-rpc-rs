@@ -308,6 +308,8 @@ jsonrpc_client!(pub struct BitcoinRpcClient {
         pub fn createrawtransaction(&self, inputs: Vec<TxInput>, outputs: HashMap<String, f64>, locktime: Option<isize>) -> Result<String>;
         pub fn dumpprivkey(&self, address: String) -> Result<String>;
         pub fn generate(&self, number: isize, iterations: Option<isize>) -> Result<Vec<String>>;
+        pub fn getbalance(&self) -> Result<f64>;
+        pub fn getreceivedbyaddress(&self, address: &str, confirmations: isize) -> Result<f64>;
         pub fn getblockchaininfo(&self) -> Result<BlockChainInfo>;
         pub fn getblockcount(&self) -> Result<isize>;
         pub fn getblockhash(&self, block_height: isize) -> Result<String>;
@@ -318,8 +320,8 @@ jsonrpc_client!(pub struct BitcoinRpcClient {
         pub fn signrawtransaction(&self, transaction: String, outputs: Option<Vec<TxOutput>>, privkeys: Option<Vec<String>>, sig_hash_type: Option<String>) -> Result<SignedTx>;
         pub fn gettxout(&self, txid: String, vout: isize, unconfirmed: bool) -> Result<Option<TxOut>>;
     enum:
-        #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getblock(&self, header_hash: String, verbosity: isize) -> Result<Zero(SerializedData)|One(Block)|Two(FullBlock)>;
-        #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getblock(&self, header_hash: String, verbosity: bool) -> Result<False(SerializedData)|True(Block)>;
-        #[cfg(all(not(feature = "ltc"), not(feature = "doge")))] pub fn getrawtransaction(&self, txid: String, verbose: bool) -> Result<False(SerializedData)|True(Transaction)>;
-        #[cfg(any(feature = "ltc", feature = "doge"))] pub fn getrawtransaction(&self, txid: String, verbose: isize) -> Result<Zero(SerializedData)|One(Transaction)>;
+        #[cfg(all(not(feature = "ltc"), not(feature = "bch"), not(feature = "doge")))] pub fn getblock(&self, header_hash: String, verbosity: isize) -> Result<Zero(SerializedData)|One(Block)|Two(FullBlock)>;
+        #[cfg(any(feature = "ltc", feature = "bch", feature = "doge"))] pub fn getblock(&self, header_hash: String, verbosity: bool) -> Result<False(SerializedData)|True(Block)>;
+        #[cfg(all(not(feature = "ltc"), not(feature = "bch"), not(feature = "doge")))] pub fn getrawtransaction(&self, txid: String, verbose: bool) -> Result<False(SerializedData)|True(Transaction)>;
+        #[cfg(any(feature = "ltc", feature = "bch", feature = "doge"))] pub fn getrawtransaction(&self, txid: String, verbose: isize) -> Result<Zero(SerializedData)|One(Transaction)>;
 });

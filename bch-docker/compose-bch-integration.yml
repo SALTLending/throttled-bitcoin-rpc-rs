@@ -4,17 +4,17 @@ services:
   
   app:
     build:
-      context:  .
-      dockerfile: rpc-bch.Dockerfile
+      context:  ../.
+      dockerfile: bch-docker/rpc-bch.Dockerfile
     stdin_open: true
     tty: true
     links:
       - node
     volumes:
-      - ./src:/app/src/rs/src
-      - ./tests:/app/src/rs/tests
-      - ./cargo.toml:/app/src/rs/cargo.toml
-      - ./README.md:/app/src/rs/README.md
+      - ../src:/app/src/rs/src
+      - ../tests:/app/src/rs/tests
+      - ../cargo.toml:/app/src/rs/cargo.toml
+      - ../README.md:/app/src/rs/README.md
 
       # [Optional] If you git clone using SSH keys, mounting them lets you reuse them.
       - ~/.ssh:/root/.ssh
@@ -43,9 +43,5 @@ services:
         
     expose:
       - "18332"
-      - "18443"
-      - "18444"
     ports:
       - "18332:18332"
-      - "18443:18443"
-      - "18444:18444"
