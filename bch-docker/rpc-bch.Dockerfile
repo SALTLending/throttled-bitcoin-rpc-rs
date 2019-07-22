@@ -6,7 +6,7 @@ RUN cargo install cargo-watch
 WORKDIR /app/src
 RUN USER=root cargo new --lib rs
 WORKDIR /app/src/rs
-COPY ./Cargo.toml ./Cargo.lock  ./
+COPY ./Cargo.toml  ./
 RUN cargo check
 RUN cargo build
 
