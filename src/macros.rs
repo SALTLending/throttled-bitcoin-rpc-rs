@@ -67,7 +67,7 @@ macro_rules! jsonrpc_client {
             pub fn polymorphize(self) -> RpcRequest<serde_json::Value> {
                 RpcRequest {
                     method: self.method,
-                    params: dbg!(params_cleanse(serde_json::from_str(&serde_json::to_string(&self.params).unwrap()).unwrap())),
+                    params:params_cleanse(serde_json::from_str(&serde_json::to_string(&self.params).unwrap()).unwrap()),
                     id: self.id,
                 }
             }

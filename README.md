@@ -61,4 +61,4 @@ fn main() {
 So we want to use docker so that way the 'dev' setup isn't magic and is explicit and reproducable. Then we take the (BCH) and do some integration testing on them.
 
 We utilzie the following command in order to get dynamic testing done..
-`docker-compose -f bch-docker/compose-bch-integration.yml down; docker-compose -f bch-docker/compose-bch-integration.yml up`
+`docker-compose -f bch-docker/compose-bch-integration.yml down; docker-compose -f bch-docker/compose-bch-integration.yml build;docker-compose -f bch-docker/compose-bch-integration.yml up`

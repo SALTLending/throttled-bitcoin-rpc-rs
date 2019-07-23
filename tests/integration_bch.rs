@@ -79,7 +79,7 @@ fn running_through_transaction() {
 
     rpc_client.generate(101, None).expect("Generating 101");
     let tx = rpc_client
-        .sendtoaddress(address.clone(), 25.0, None, None, None)
+        .sendtoaddress(&address, 25.0, None, None, None)
         .expect("Sending 25 to our address");
     let after_generations = rpc_client.generate(10, None).expect("Generating 1");
     let first_generated = &after_generations[0];
@@ -97,10 +97,10 @@ fn running_through_transaction() {
     );
 
     rpc_client
-        .getrawtransaction(tx, 0)
+        .getrawtransaction(&tx, 0)
         .expect("Getting the raw transaction");
 
     rpc_client
-        .getblock(first_generated.into(), true)
+        .getblock(first_generated, true)
         .expect("Getting the block for the generation after tx");
 }

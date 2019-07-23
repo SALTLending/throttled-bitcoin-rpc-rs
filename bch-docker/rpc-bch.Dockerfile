@@ -12,6 +12,6 @@ RUN cargo build
 
 # Copy everything else into the source
 COPY . .
-RUN rm -rf src/ cargo.toml README.md tests
+RUN rm -rf src/ cargo.toml README.md tests ./Cargo.toml
 
 # RUN cargo build --featurers btc

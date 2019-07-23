@@ -1,14 +1,9 @@
 #[macro_use]
 extern crate failure;
-extern crate reqwest;
+#[macro_use]
 extern crate serde;
 #[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-extern crate uuid;
-
-#[macro_use]
-mod macros;
+extern crate throttled_json_rpc;
 
 use std::collections::HashMap;
 
@@ -305,23 +300,23 @@ pub struct SignedTx {
 
 jsonrpc_client!(pub struct BitcoinRpcClient {
     single:
-        pub fn createrawtransaction(&self, inputs: Vec<TxInput>, outputs: HashMap<String, f64>, locktime: Option<isize>) -> Result<String>;
-        pub fn dumpprivkey(&self, address: String) -> Result<String>;
-        pub fn generate(&self, number: isize, iterations: Option<isize>) -> Result<Vec<String>>;
+        pub fn createrawtransaction(&self, inputs: &[TxInput], outputs: &HashMap<&str, f64>, locktime: Option<u32>) -> Result<String>;
+        pub fn dumpprivkey(&self, address: &str) -> Result<String>;
+        pub fn generate(&self, number: usize, iterations: Option<usize>) -> Result<Vec<String>>;
         pub fn getbalance(&self) -> Result<f64>;
         pub fn getreceivedbyaddress(&self, address: &str, confirmations: isize) -> Result<f64>;
         pub fn getblockchaininfo(&self) -> Result<BlockChainInfo>;
-        pub fn getblockcount(&self) -> Result<isize>;
-        pub fn getblockhash(&self, block_height: isize) -> Result<String>;
-        pub fn getnewaddress(&self, account: Option<String>, address_type: Option<String>) -> Result<String>;
+        pub fn getblockcount(&self) -> Result<u32>;
+        pub fn getblockhash(&self, block_height: u32) -> Result<String>;
+        pub fn getnewaddress(&self, account: Option<&str>, address_type: Option<&str>) -> Result<String>;
         pub fn getrawmempool(&self, format: bool) -> Result<RawMemPool>;
-        pub fn sendrawtransaction(&self, transaction: String, allow_high_fee: Option<bool>) -> Result<String>;
-        pub fn sendtoaddress(&self, address: String, amount: f64, comment: Option<String>, comment_to: Option<String>, include_fee: Option<bool>) -> Result<String>;
-        pub fn signrawtransaction(&self, transaction: String, outputs: Option<Vec<TxOutput>>, privkeys: Option<Vec<String>>, sig_hash_type: Option<String>) -> Result<SignedTx>;
-        pub fn gettxout(&self, txid: String, vout: isize, unconfirmed: bool) -> Result<Option<TxOut>>;
+        pub fn sendrawtransaction(&self, transaction: &str, allow_high_fee: Option<bool>) -> Result<String>;
+        pub fn sendtoaddress(&self, address: &str, amount: f64, comment: Option<&str>, comment_to: Option<&str>, include_fee: Option<bool>) -> Result<String>;
+        pub fn signrawtransaction(&self, transaction: &str, outputs: Option<&[TxOutput]>, privkeys: Option<&[&str]>, sig_hash_type: Option<&str>) -> Result<SignedTx>;
+        pub fn gettxout(&self, txid: &str, vout: u32, unconfirmed: bool) -> Result<Option<TxOut>>;
     enum:
-        #[cfg(all(not(feature = "ltc"), not(feature = "bch"), not(feature = "doge")))] pub fn getblock(&self, header_hash: String, verbosity: isize) -> Result<Zero(SerializedData)|One(Block)|Two(FullBlock)>;
-        #[cfg(any(feature = "ltc", feature = "bch", feature = "doge"))] pub fn getblock(&self, header_hash: String, verbosity: bool) -> Result<False(SerializedData)|True(Block)>;
-        #[cfg(all(not(feature = "ltc"), not(feature = "bch"), not(feature = "doge")))] pub fn getrawtransaction(&self, txid: String, verbose: bool) -> Result<False(SerializedData)|True(Transaction)>;
-        #[cfg(any(feature = "ltc", feature = "bch", feature = "doge"))] pub fn getrawtransaction(&self, txid: String, verbose: isize) -> Result<Zero(SerializedData)|One(Transaction)>;
+        #[cfg(all(not(feature = "ltc"), not(feature = "bch"), not(feature = "doge")))] pub fn getblock(&self, header_hash: &str, verbosity: u8) -> Result<Zero(SerializedData)|One(Block)|Two(FullBlock)>;
+        #[cfg(any(feature = "ltc", feature = "bch", feature = "doge"))] pub fn getblock(&self, header_hash: &str, verbosity: bool) -> Result<False(SerializedData)|True(Block)>;
+        #[cfg(all(not(feature = "ltc"), not(feature = "bch"), not(feature = "doge")))] pub fn getrawtransaction(&self, txid: &str, verbose: bool) -> Result<False(SerializedData)|True(Transaction)>;
+        #[cfg(any(feature = "ltc", feature = "bch", feature = "doge"))] pub fn getrawtransaction(&self, txid: &str, verbose: u8) -> Result<Zero(SerializedData)|One(Transaction)>;
 });
