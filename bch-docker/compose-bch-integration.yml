@@ -14,7 +14,6 @@ services:
       - ../src:/app/src/rs/src
       - ../tests:/app/src/rs/tests
       - ../Cargo.toml:/app/src/rs/Cargo.toml
-      - ../../throttled-json-rpc-rs:/app/src/throttled-json-rpc-rs
       - ../README.md:/app/src/rs/README.md
 
       # [Optional] If you git clone using SSH keys, mounting them lets you reuse them.
