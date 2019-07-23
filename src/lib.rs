@@ -313,8 +313,7 @@ jsonrpc_client!(pub struct BitcoinRpcClient {
         pub fn getblockchaininfo(&self) -> Result<BlockChainInfo>;
         pub fn getblockcount(&self) -> Result<isize>;
         pub fn getblockhash(&self, block_height: isize) -> Result<String>;
-        #[cfg(all(not(feature = "bch")))]  pub fn getnewaddress(&self, account: Option<String>, address_type: Option<String>) -> Result<String>;
-        #[cfg(any(feature = "bch"))]  pub fn getnewaddress(&self) -> Result<String>;
+        pub fn getnewaddress(&self, account: Option<String>, address_type: Option<String>) -> Result<String>;
         pub fn getrawmempool(&self, format: bool) -> Result<RawMemPool>;
         pub fn sendrawtransaction(&self, transaction: String, allow_high_fee: Option<bool>) -> Result<String>;
         pub fn sendtoaddress(&self, address: String, amount: f64, comment: Option<String>, comment_to: Option<String>, include_fee: Option<bool>) -> Result<String>;

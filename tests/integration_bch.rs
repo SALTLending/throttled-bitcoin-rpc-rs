@@ -70,22 +70,18 @@ fn running_through_transaction() {
         10,
         1000,
     );
-    let address = rpc_client.getnewaddress().expect("Getting an address");
+    let address = rpc_client
+        .getnewaddress(None, None)
+        .expect("Getting an address");
     let account_balance_before = rpc_client
         .getreceivedbyaddress(&address, 0)
         .expect("Getting balance before");
 
-    rpc_client.generate(101, Some(10000)).expect("Generating 101");
+    rpc_client.generate(101, None).expect("Generating 101");
     let tx = rpc_client
-        .sendtoaddress(
-            address.clone(),
-            25.0,
-            Some("comment".into()),
-            Some("comment to".into()),
-            Some(true),
-        )
+        .sendtoaddress(address.clone(), 25.0, None, None, None)
         .expect("Sending 25 to our address");
-    let after_generations = rpc_client.generate(10, Some(10000)).expect("Generating 1");
+    let after_generations = rpc_client.generate(10, None).expect("Generating 1");
     let first_generated = &after_generations[0];
 
     let account_balance = rpc_client
@@ -95,7 +91,8 @@ fn running_through_transaction() {
     assert!(
         (25.0 - (account_balance - account_balance_before)).abs() < 0.01,
         "Current balance delta for our account, {} - {} = {}",
-        account_balance, account_balance_before,
+        account_balance,
+        account_balance_before,
         (account_balance - account_balance_before)
     );
 

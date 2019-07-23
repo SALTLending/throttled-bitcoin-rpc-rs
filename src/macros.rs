@@ -24,6 +24,30 @@ macro_rules! jsonrpc_client {
         use std::sync::{Arc, Condvar, Mutex};
         use uuid::Uuid as req_id;
 
+        /**
+            There are times that we want to clean the trailing nulls, because then it works better for some implementations
+            of Nodes where it figures out the optionals by the count of the params via the json-rpc.
+        */
+        fn params_cleanse(value: serde_json::Value) -> serde_json::Value {
+            use serde_json::Value::{Array, Null};
+            match value {
+                Array(values) => Array(
+                    values
+                        .into_iter()
+                        .rev()
+                        .skip_while(|some_value| match some_value {
+                            Null => true,
+                            _ => false,
+                        })
+                        .collect::<Vec<serde_json::Value>>()
+                        .into_iter()
+                        .rev()
+                        .collect::<Vec<serde_json::Value>>(),
+                ),
+                _ => value,
+            }
+        }
+
         #[derive(Deserialize)]
         struct RpcResponse<T> {
             pub result: Option<T>,
@@ -43,7 +67,7 @@ macro_rules! jsonrpc_client {
             pub fn polymorphize(self) -> RpcRequest<serde_json::Value> {
                 RpcRequest {
                     method: self.method,
-                    params: serde_json::from_str(&serde_json::to_string(&self.params).unwrap()).unwrap(),
+                    params: dbg!(params_cleanse(serde_json::from_str(&serde_json::to_string(&self.params).unwrap()).unwrap())),
                     id: self.id,
                 }
             }
@@ -269,11 +293,11 @@ macro_rules! jsonrpc_client {
                             (Some(ref u), None) => builder = builder.basic_auth::<&str, &str>(u, None),
                             _ => (),
                         };
-                        builder = builder.json(&RpcRequest {
+                        builder = builder.json(&(RpcRequest {
                             method: stringify!($method_a).to_owned(),
                             params: ($($arg_name_a,)*),
                             id: req_id::new_v4(),
-                        });
+                        }).polymorphize());
                         if self.rps > 0 {
                             let wait = std::time::Duration::from_secs(1) / self.rps as u32;
                             let mut lock = self.last_req.lock().unwrap();
@@ -333,11 +357,11 @@ macro_rules! jsonrpc_client {
                             (Some(ref u), None) => builder = builder.basic_auth::<&str, &str>(u, None),
                             _ => (),
                         };
-                        builder = builder.json(&RpcRequest {
+                        builder = builder.json(&(RpcRequest {
                             method: stringify!($method_b).to_owned(),
                             params: ($($arg_name_b,)*),
                             id: req_id::new_v4(),
-                        });
+                        }).polymorphize());
                         if self.rps > 0 {
                             let wait = std::time::Duration::from_secs(1) / self.rps as u32;
                             let mut lock = self.last_req.lock().unwrap();
