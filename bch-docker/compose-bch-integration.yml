@@ -13,7 +13,7 @@ services:
     volumes:
       - ../src:/app/src/rs/src
       - ../tests:/app/src/rs/tests
-      - ../cargo.toml:/app/src/rs/cargo.toml
+      - ../Cargo.toml:/app/src/rs/Cargo.toml
       - ../README.md:/app/src/rs/README.md
 
       # [Optional] If you git clone using SSH keys, mounting them lets you reuse them.

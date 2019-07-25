@@ -62,7 +62,6 @@ fn get_static_infos_count() {
 fn running_through_transaction() {
     let user = std::env::var("USER").expect("env: USER");
     let password = std::env::var("PASS").expect("env: PASS");
-    let address = std::env::var("ADDRESS").expect("env: ADDRESS");
     let rpc_client = BitcoinRpcClient::new(
         URL.clone().into(),
         Some(user.clone()),
@@ -71,21 +70,18 @@ fn running_through_transaction() {
         10,
         1000,
     );
+    let address = rpc_client
+        .getnewaddress(None, None)
+        .expect("Getting an address");
     let account_balance_before = rpc_client
         .getreceivedbyaddress(&address, 0)
         .expect("Getting balance before");
 
-    rpc_client.generate(50, Some(1)).expect("Generating 50");
+    rpc_client.generate(101, None).expect("Generating 101");
     let tx = rpc_client
-        .sendtoaddress(
-            address.clone(),
-            25.0,
-            Some("comment".into()),
-            Some("comment to".into()),
-            Some(true),
-        )
+        .sendtoaddress(&address, 25.0, None, None, None)
         .expect("Sending 25 to our address");
-    let after_generations = rpc_client.generate(1, Some(100)).expect("Generating 1");
+    let after_generations = rpc_client.generate(10, None).expect("Generating 1");
     let first_generated = &after_generations[0];
 
     let account_balance = rpc_client
@@ -94,15 +90,17 @@ fn running_through_transaction() {
 
     assert!(
         (25.0 - (account_balance - account_balance_before)).abs() < 0.01,
-        "Current balance delta for our account, {}",
+        "Current balance delta for our account, {} - {} = {}",
+        account_balance,
+        account_balance_before,
         (account_balance - account_balance_before)
     );
 
     rpc_client
-        .getrawtransaction(tx, 0)
+        .getrawtransaction(&tx, 0)
         .expect("Getting the raw transaction");
 
     rpc_client
-        .getblock(first_generated.into(), true)
+        .getblock(first_generated, true)
         .expect("Getting the block for the generation after tx");
 }
