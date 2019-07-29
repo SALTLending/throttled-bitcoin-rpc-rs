@@ -51,7 +51,7 @@ pub struct FullBlock {
     pub nextblockhash: Option<String>,
 }
 
-#[cfg(not(any(feature = "doge", feature = "dash")))]
+#[cfg(not(any(feature = "doge", feature = "dash", feature = "bch")))]
 #[derive(Deserialize, Clone, Debug)]
 pub struct Transaction {
     pub txid: String,
@@ -67,6 +67,21 @@ pub struct Transaction {
     pub confirmations: Option<serde_json::Number>,
     pub time: Option<serde_json::Number>,
     pub blocktime: Option<serde_json::Number>,
+}
+#[cfg(feature = "bch")]
+#[derive(Deserialize, Clone, Debug)]
+pub struct Transaction {
+    pub blockhash: Option<String>,
+    pub blocktime: Option<serde_json::Number>,
+    pub confirmations: Option<serde_json::Number>,
+    pub hex: String,
+    pub locktime: serde_json::Number,
+    pub size: serde_json::Number,
+    pub time: Option<serde_json::Number>,
+    pub txid: String,
+    pub version: serde_json::Number,
+    pub vin: Vec<Vin>,
+    pub vout: Vec<Vout>,
 }
 
 #[cfg(feature = "dash")]
@@ -234,7 +249,7 @@ pub struct TxOutSetInfo {
     pub total_amount: serde_json::Number,
 }
 
-#[cfg(all(not(feature = "ltc"), not(feature = "doge")))]
+#[cfg(all(not(feature = "ltc"), not(feature = "doge"), not(feature = "bch")))]
 #[derive(Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum GetRawTransactionReply {
@@ -242,7 +257,7 @@ pub enum GetRawTransactionReply {
     True(Transaction),
 }
 
-#[cfg(any(feature = "ltc", feature = "doge"))]
+#[cfg(any(feature = "ltc", feature = "doge", feature = "bch"))]
 #[derive(Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum GetRawTransactionReply {

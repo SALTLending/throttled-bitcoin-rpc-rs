@@ -98,9 +98,39 @@ fn running_through_transaction() {
 
     rpc_client
         .getrawtransaction(&tx, 0)
-        .expect("Getting the raw transaction");
+        .expect("Getting the raw transaction 0");
+
+    let raw_response = reqwest::Client::new()
+        .post(&URL.clone())
+        .basic_auth(user.clone(), Some(password.clone()))
+        .json(&json!({
+        "method": "getrawtransaction",
+        "params": [
+            tx,
+            1
+        ]
+        }))
+        .send()
+        .expect("Valid client response")
+        .json::<Value>();
+    println!("Raw Response {:#?}", raw_response);
+
+    rpc_client
+        .getrawtransaction(&tx, 1)
+        .expect("Getting the raw transaction 1");
 
     rpc_client
         .getblock(first_generated, true)
         .expect("Getting the block for the generation after tx");
+    rpc_client
+        .getblock(first_generated, false)
+        .expect("Getting the block for the generation after tx");
 }
+
+// #[test]
+// fn custom_type() {
+//     use serde_json::json;
+
+//     let before = json!({"hex":"0100000001704a3855c614c7a7f03d4bde04e3e2c033c886a73852e5e7fac016cd0536428f0000000049483045022100a3966b8d9c33bee457ad5bbba0d8f8acc5bd9d30ef1b93175da6046d96e54ef8022045c8fcd5d83835dee28633b8853d06a9ecf4b847ddd9153797b4335950a2a06941feffffff0200ea0295000000001976a914d20e2943a785ceb711ce4736829019e7a9f80f0288ac00f90295000000001976a914bc1b5c792621392266edcc26801cee96137b4e9c88ac65000000","txid":"5cb7b6b8f68263db6a23f87cd9677cc07856c40e66800668f0730a5f7d939eaf","size":192,"version":1,"locktime":101,"vin":[{"txid":"8f423605cd16c0fae7e55238a786c833c0e2e304de4b3df0a7c714c655384a70","vout":0,"scriptSig":{"asm":"3045022100a3966b8d9c33bee457ad5bbba0d8f8acc5bd9d30ef1b93175da6046d96e54ef8022045c8fcd5d83835dee28633b8853d06a9ecf4b847ddd9153797b4335950a2a069[ALL|FORKID]","hex":"483045022100a3966b8d9c33bee457ad5bbba0d8f8acc5bd9d30ef1b93175da6046d96e54ef8022045c8fcd5d83835dee28633b8853d06a9ecf4b847ddd9153797b4335950a2a06941"},"sequence":4294967294}],"vout":[{"value":24.99996160,"n":0,"scriptPubKey":{"asm":"OP_DUP OP_HASH160 d20e2943a785ceb711ce4736829019e7a9f80f02 OP_EQUALVERIFY OP_CHECKSIG","hex":"76a914d20e2943a785ceb711ce4736829019e7a9f80f0288ac","reqSigs":1,"type":"pubkeyhash","addresses":["bchreg:qrfqu22r57zuadc3eerndq5sr8n6n7q0qgn5750yev"]}},{"value":25.00000000,"n":1,"scriptPubKey":{"asm":"OP_DUP OP_HASH160 bc1b5c792621392266edcc26801cee96137b4e9c OP_EQUALVERIFY OP_CHECKSIG","hex":"76a914bc1b5c792621392266edcc26801cee96137b4e9c88ac","reqSigs":1,"type":"pubkeyhash","addresses":["bchreg:qz7pkhreycsnjgnxahxzdqqua6tpx76wns2ghhm3mh"]}}],"blockhash":"38853fb6a878c3c039c77accdd3df5adee015cd1498aecb404cf59d041a45c82","confirmations":101,"time":1564413711,"blocktime":1564413711});
+//     let _after: throttled_bitcoin_rpc::Transaction = serde_json::from_value(before).unwrap();
+// }
