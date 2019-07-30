@@ -98,9 +98,31 @@ fn running_through_transaction() {
 
     rpc_client
         .getrawtransaction(&tx, 0)
-        .expect("Getting the raw transaction");
+        .expect("Getting the raw transaction 0");
+
+    let raw_response = reqwest::Client::new()
+        .post(&URL.clone())
+        .basic_auth(user.clone(), Some(password.clone()))
+        .json(&json!({
+        "method": "getrawtransaction",
+        "params": [
+            tx,
+            1
+        ]
+        }))
+        .send()
+        .expect("Valid client response")
+        .json::<Value>();
+    println!("Raw Response {:#?}", raw_response);
+
+    rpc_client
+        .getrawtransaction(&tx, 1)
+        .expect("Getting the raw transaction 1");
 
     rpc_client
         .getblock(first_generated, true)
+        .expect("Getting the block for the generation after tx");
+    rpc_client
+        .getblock(first_generated, false)
         .expect("Getting the block for the generation after tx");
 }
